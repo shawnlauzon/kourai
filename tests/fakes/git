@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# git for tests: local subcommands run the real git; anything that talks to
+# a remote fails like the other fakes.
+case "${1:-}" in
+  push|fetch|pull|clone|ls-remote|remote-https|submodule)
+    exec "$(dirname "$0")/_fake-network-tool" "$@" ;;
+esac
+self_dir=$(cd "$(dirname "$0")" && pwd)
+real=$(PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$self_dir" | paste -sd: -) command -v git)
+exec "$real" "$@"

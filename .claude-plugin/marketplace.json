@@ -7,7 +7,7 @@
   "plugins": [
     {
       "name": "kourai",
-      "source": "./",
+      "source": ".",
       "description": "A Trello-driven fleet of Claude Code agents that takes cards from approval through tests, review, merge and release."
     }
   ]

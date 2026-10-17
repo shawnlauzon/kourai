@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Stand-in for a network tool during tests. Any call is a test bug: a test
+# must never reach AWS, Tailscale, GitHub, Trello or a server. It logs the
+# call (so a test can assert on it) and fails loudly.
+tool=$(basename "$0")
+echo "FAKE $tool: network tool called in a test: $tool $*" >&2
+if [ -n "${KOURAI_TEST_NETLOG:-}" ]; then
+  printf '%s %s\n' "$tool" "$*" >> "$KOURAI_TEST_NETLOG"
+fi
+exit 97

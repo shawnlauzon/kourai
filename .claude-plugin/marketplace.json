@@ -1,0 +1,14 @@
+{
+  "name": "kourai",
+  "description": "The kourai board workflow plugin, published from its own repo with tagged versions.",
+  "owner": {
+    "name": "Shawn Lauzon"
+  },
+  "plugins": [
+    {
+      "name": "kourai",
+      "source": "./",
+      "description": "A Trello-driven fleet of Claude Code agents that takes cards from approval through tests, review, merge and release."
+    }
+  ]
+}

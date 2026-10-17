@@ -1,0 +1,9 @@
+# Installation configs live outside git (see docs/CONFIG.md); never commit one.
+kourai.toml
+*.local.toml
+# Python
+__pycache__/
+*.pyc
+# Test scratch
+tests/.tmp/
+.DS_Store

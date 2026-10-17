@@ -7,7 +7,7 @@ will change. `kourai-install apply` makes exactly those changes, after
 backing up each file it touches. `kourai-install rollback` puts every one of
 those files back and switches to the previous release, with no network.
 
-Status: design only. Nothing here is built yet. Three facts are still to be
+Status: design only. Nothing here is built yet. Two facts are still to be
 checked before building; they are marked **(verify)**.
 
 ## What an installation is made of

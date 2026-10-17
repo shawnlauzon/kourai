@@ -9,13 +9,14 @@ Private. All rights reserved (see `LICENSE`).
 ## Status
 
 Under construction, off the RunnerCity board's critical path. The plan is the
-Claude Doc "Extracting the Board Workflow" (steps P1 to P10). Done so far:
+Claude Doc "Extracting the Board Workflow" (steps P1 to P10), https://claude.ai/artifact/9A45uWmz2fFhRbcvM7W5WF. Done so far:
 
 | Step | What | State |
 |---|---|---|
 | P1 | This repo, its layout, the plugin and marketplace manifests | done |
 | P2 | One config file per installation: defaults, loader, inventory | loader and defaults done; scripts move onto it as they are copied in |
 | P7 | Installer, update and rollback | designed in `docs/UPDATING.md`, not built |
+| P3-P6, P8-P10 | Liveness, rules split, adapters, agents, pilot, switch-over, docs | not started |
 
 Nothing here is installed anywhere yet. RunnerCity still runs its own copy
 under `runner_city/.claude/`; `docs/SYNC.md` records the baseline commit and
@@ -50,6 +51,7 @@ every workflow change that must be ported before the switch-over (P9).
 | `installer/` | `kourai-install` (P7) |
 | `adapters/` | The adapter interface and reference adapters (P5) |
 | `docs/` | `CONFIG.md`, `VARIABLES.md` (the inventory), `UPDATING.md`, `SYNC.md` |
+| `CHANGELOG.md` | What each tagged version changes |
 | `tests/` | Script tests; `tests/run.sh` puts fake network tools first on PATH before any test runs |
 
 ## Requirements

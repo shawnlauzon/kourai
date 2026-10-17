@@ -1,0 +1,36 @@
+# A small defaults file for the loader's own tests. The real one is
+# config/defaults.toml; test-defaults.sh checks that one.
+# Top-level keys come before the first table.
+repos = []
+
+[_schema]
+version = 1
+required = ["project.name", "board.id"]
+open_tables = ["models"]
+
+[_schema.items.repos]
+required = ["id", "slug"]
+
+[_schema.items.repos.defaults]
+id = ""
+slug = ""
+base = "main"
+free_paths = ["docs/"]
+
+[project]
+name = ""
+state_dir = "~/kourai-state"
+
+[board]
+id = ""
+credentials_file = "{project.state_dir}/trello.env"
+list_words = ["TODO", "DONE"]
+
+[limits]
+card_test_servers = 3
+context_ceiling_tokens = 150000
+token_audit = true
+
+[models]
+board-watcher = "sonnet"
+

@@ -1,0 +1,449 @@
+# kourai defaults: every workflow variable, its default, and what it does.
+#
+# An installation never edits this file. It writes only the values it
+# changes into its own config (see docs/CONFIG.md); everything else comes
+# from here. `kourai-config check` rejects a key that is not in this file,
+# so a typo cannot silently fall back to a default.
+#
+# Strings may reference another key as {dotted.key}; a leading ~/ is the
+# home directory. Tunable defaults are RunnerCity's values on 2026-10-17
+# (runner_city mobile main 913585a3); docs/VARIABLES.md says where each
+# one came from.
+#
+# Every key has a comment line just above it (tests/test-defaults.sh
+# checks this), and every key is listed in docs/VARIABLES.md.
+
+# Repos, in merge order: the first merges first. One table per repo; the
+# per-repo keys and their defaults are under [_schema.items.repos.defaults].
+repos = []
+
+# How kourai-config checks a config. Not a setting; a config may not set it.
+[_schema]
+# Version of this schema.
+version = 1
+# Keys a config must set to a non-empty value.
+required = [
+  "project.name",
+  "board.id",
+  "board.members.user",
+  "board.members.agent",
+  "github.user_login",
+  "github.app_id",
+  "github.app_key_file",
+]
+# Tables a config may add its own keys to.
+open_tables = ["models", "adapters"]
+
+[_schema.items.repos]
+# Keys each repo must set.
+required = ["id", "slug", "path", "base"]
+
+[_schema.items.repos.defaults]
+# Short name used in config and messages, e.g. "server" or "mobile".
+id = ""
+# GitHub owner/name.
+slug = ""
+# Older slugs still accepted for this repo (after a rename or move).
+legacy_slugs = []
+# The main local checkout.
+path = ""
+# The branch cards merge into.
+base = "main"
+# What prose calls the base branch (RunnerCity says "mobile" for main).
+prose_name = ""
+# Release branch the promoter fast-forwards, or "" for none.
+release_branch = ""
+# Tag prefix that triggers a client build, or "" for none.
+release_tag_prefix = ""
+# How a card's name cites this repo's PR: "#" gives (#12), "server #" gives (server #12).
+card_name_tag = "#"
+# Stack adapter folder for this repo (P5), or "" until adapters exist.
+adapter = ""
+# Commands that install dependencies in a new worktree, run in order.
+deps_commands = []
+# Env files copied into worktrees as empty placeholders.
+worktree_env_placeholders = []
+# Env files symlinked into worktrees from the main checkout.
+worktree_env_links = []
+
+[_schema.items.repos.defaults.review]
+# Paths whose change always needs the user's review (globs).
+always_paths = []
+# Paths whose change never needs review (globs).
+free_paths = []
+# Paths where a change needs review only when the PR body says "App-visible: yes".
+flag_paths = []
+# Paths a commit may touch after approval without losing it.
+keep_approval_paths = []
+
+[_schema.items.repos.defaults.kind]
+# Paths that make a PR an [AGENTS] (workflow or docs) change.
+agents_paths = []
+# Paths that make a PR a tests-only change.
+tests_paths = []
+
+[_schema.items.repos.defaults.ci]
+# A required check that may be missing on docs-only PRs, or "".
+docs_only_check = ""
+# The paths that count as docs-only for that check.
+docs_only_paths = []
+
+[install]
+# The kourai version this installation runs (a tag kourai--v<version>).
+version = "0.1.0"
+# Where kourai releases come from.
+source_repo = "shawnlauzon/kourai"
+
+[project]
+# Short name, used in messages, card names and the state folder.
+name = ""
+# Folder outside git for state, logs, locks and secrets.
+state_dir = "~/Development/{project.name}_files"
+# Claude Code transcript folder for the main checkout; "auto" derives it from the first repo's path.
+transcripts_dir = "auto"
+# Shared rules file every agent reads (the project part, after the core).
+rules_file = ""
+
+[paths]
+# Trello key and token (KEY=..., TOKEN=...); the gates need only read access.
+trello_env = "{project.state_dir}/trello.env"
+# Named locks (run-locked.sh, the release-server lock).
+locks_dir = "{project.state_dir}/locks"
+# Per-card pause files.
+pause_dir = "{project.state_dir}/pause"
+# Keep-alive files of long runs.
+heartbeat_dir = "{project.state_dir}/heartbeats"
+# Which card holds which test server.
+test_server_state_dir = "{project.state_dir}/test-servers"
+# Detached test-server bring-up jobs.
+test_server_up_dir = "{project.state_dir}/test-server-up"
+# Cache of card comments for agents-status.
+agents_status_cache = "{project.state_dir}/agents-status-cache"
+# The board watcher's wait cursor and marks.
+board_wait_state = "{project.state_dir}/board-wait.state.json"
+# Heartbeat file /run-board reads to see whether a watcher runs.
+board_watcher_heartbeat = "{project.state_dir}/board-watcher.heartbeat"
+# Where installed gate hooks are copied, per version (see docs/UPDATING.md).
+hooks_dir = "{project.state_dir}/kourai/hooks"
+# Agent worktrees, relative to each repo's checkout.
+worktree_root = ".claude/worktrees"
+
+[board]
+# Tracker. Only "trello" exists today.
+provider = "trello"
+# Board short link (the 8 characters after /b/ in its URL).
+id = ""
+# Name used in prose, e.g. "RunnerCity Development".
+name = ""
+# Label id prefix for the Trello MCP (ari:cloud:trello::label/workspace/<workspace id>/).
+label_prefix = ""
+
+[board.members]
+# The user's Trello member id: their comments are instructions and sign-offs.
+user = ""
+# The Trello member id every agent posts as.
+agent = ""
+
+[board.lists.proposed]
+# Name word that finds the list (lists may carry emoji).
+name = "PROPOSED"
+# List id; needed only where a gate checks the list.
+id = ""
+# Older names still matched.
+aliases = ["BRAINSTORM"]
+
+[board.lists.bugs]
+# Name word.
+name = "BUG REPORTS"
+# List id.
+id = ""
+# Older names.
+aliases = []
+
+[board.lists.todo]
+# Name word.
+name = "TODO"
+# List id.
+id = ""
+# Older names.
+aliases = []
+
+[board.lists.questions]
+# Name word.
+name = "QUESTIONS"
+# List id.
+id = ""
+# Older names.
+aliases = ["WAITING FOR CLARITY"]
+
+[board.lists.building]
+# Name word.
+name = "BUILDING"
+# List id.
+id = ""
+# Older names.
+aliases = []
+
+[board.lists.testing]
+# Name word.
+name = "TESTING"
+# List id.
+id = ""
+# Older names.
+aliases = []
+
+[board.lists.review]
+# Name word.
+name = "REVIEW"
+# List id.
+id = ""
+# Older names.
+aliases = []
+
+[board.lists.merging]
+# Name word.
+name = "MERGING"
+# List id (the merge and merged-comment gates check it).
+id = ""
+# Older names.
+aliases = ["APPROVED"]
+
+[board.lists.merged]
+# Name word.
+name = "MERGED"
+# List id (the merged-comment gate checks it).
+id = ""
+# Older names.
+aliases = ["READY FOR STAGING"]
+
+[board.lists.releasing]
+# Name word.
+name = "RELEASING"
+# List id.
+id = ""
+# Older names.
+aliases = []
+
+[board.lists.done]
+# Name word.
+name = "DONE"
+# List id (the merged-comment gate checks it).
+id = ""
+# Older names.
+aliases = []
+
+[board.labels]
+# "Actively worked" (green); board-wait owns it.
+active = ""
+# "Blocked" (dark red); board-wait owns it.
+blocked = ""
+# "No action required" (purple).
+no_action = ""
+# "Merge conflict" (orange).
+conflict = ""
+# "Needs attended session" (yellow).
+attended = ""
+
+[github]
+# The user's GitHub login: only their review approves a PR.
+user_login = ""
+# GitHub App id the agents act as.
+app_id = ""
+# The App's private key file.
+app_key_file = ""
+# The App's bot name, without [bot].
+bot_name = ""
+
+[guarded]
+# Paths whose change always needs the user's review, in every repo.
+paths = [".github/", ".claude/hooks/", ".claude/settings*.json", ".mcp.json"]
+
+[limits]
+# Card test servers: one card in TESTING per server (the TESTING WIP limit).
+card_test_servers = 3
+# CI jobs at once on the runners; one is kept for the merger's full run.
+ci_jobs_at_once = 3
+# Releases in progress at once.
+releases_at_once = 1
+# Conflict fixes or refreshes in MERGING at once (they hold no test server).
+conflict_fixes_at_once = 2
+# TEST FAILED: comments on one card before it goes to QUESTIONS.
+failures_before_questions = 3
+# Builders per card aspect.
+builders_per_aspect = 1
+# Tokens in an agent's latest request before board-wait prints CONTEXT: (hand off).
+context_ceiling_tokens = 150000
+# Roles checked against the context ceiling.
+context_ceiling_roles = ["card-manager", "promoter", "feature-tester", "mobile-builder", "server-builder", "test-builder"]
+# The board watcher compacts its own context at this many tokens (its autoCompactWindow).
+watcher_compact_tokens = 100000
+# Changed files at or above which the merger runs the full unit suite.
+merger_full_unit_files = 100
+# Lines in the board watcher's HANDOFF: note, at most.
+handoff_note_lines = 20
+
+[release]
+# Whether this installation releases at all (off: merged cards go to DONE).
+enabled = true
+# A release is due at this many app or server cards in MERGED...
+due_cards = 5
+# ...or at this many urgent cards there...
+due_urgent_cards = 1
+# ...or when a card there has waited this many hours.
+due_max_wait_hours = 24
+# Hours from the end of one release to the start of the next.
+gap_hours = 12
+# Whether a release for an urgent card skips the gap.
+urgent_skips_gap = true
+# Hours from an urgent card's filing to its fix in MERGED (time with the user not counted).
+urgent_fix_deadline_hours = 24
+# Hours between repeat wakes once an urgent deadline has passed.
+urgent_deadline_rewake_hours = 2
+# Name of the test server the promoter's full run uses.
+release_server = "integration"
+
+[tests]
+# Reruns of a failing test before it counts as failed (green* when a rerun passes).
+reruns_per_failing_test = 1
+# Full reruns of a void release run before the promoter reports it.
+void_reruns = 1
+# Passing runs in a row that prove a flaky test fixed.
+flaky_fix_proof_runs = 5
+
+[timeouts]
+# Longest any foreground wait script blocks, in seconds (under the Bash tool's limit).
+wait_limit_seconds = 530
+# Bash tool timeout the agents pass for those waits, in milliseconds.
+bash_timeout_ms = 600000
+# Seconds between board-wait's Trello polls.
+board_poll_seconds = 30
+# Seconds between board-wait's GitHub and deadline checks.
+board_slow_check_seconds = 120
+# No slow checks this close to the wait limit, in seconds.
+board_slow_margin_seconds = 60
+# Seconds between release-gap checks.
+release_gap_recheck_seconds = 300
+# Seconds between repeats of a START: that still holds.
+start_repeat_seconds = 300
+# Seconds between repeats of a STUCK:.
+stuck_repeat_seconds = 600
+# Seconds a card must look stuck before STUCK: is printed.
+stuck_grace_seconds = 180
+# Minutes without a transcript write before a live agent (no live child) is STUCK.
+agent_idle_minutes = 30
+# Hours with no event before board-wait returns anyway (safety wake).
+safety_wake_hours = 4
+# Hours between re-sends of WORKFLOW WORK: while it waits.
+workflow_work_rewake_hours = 2
+# Hours startable TODO cards wait for a test server before a wake.
+todo_held_hours = 2
+# Minutes after which /run-board treats the watcher heartbeat as stale.
+watcher_heartbeat_stale_minutes = 25
+# Hours a card manager runs before it hands off.
+card_manager_hours = 4
+# Minutes of silence after which an agent that ended its turn with no report counts as dead.
+agent_dead_quiet_minutes = 20
+# Minutes after an API error with no write before the agent counts as dead.
+agent_dead_api_error_minutes = 2
+# Seconds between ci-wait polls.
+ci_poll_seconds = 20
+# Seconds with no checks on a PR before ci-wait says none are configured.
+ci_no_checks_after_seconds = 120
+# Seconds between run-wait polls.
+run_wait_poll_seconds = 5
+# Longest wait for a named lock, in seconds.
+lock_wait_seconds = 14400
+# Seconds between heartbeat touches of a long run.
+heartbeat_interval_seconds = 60
+# Seconds between pause checks of a running card.
+pause_poll_seconds = 10
+# Seconds from TERM to KILL when a paused run is stopped.
+stop_grace_seconds = 10
+# Tries while GitHub reports mergeability as UNKNOWN.
+pr_conflicts_tries = 5
+# Seconds between those tries.
+pr_conflicts_wait_seconds = 6
+
+[liveness]
+# Hours of transcripts agent-state looks back over.
+lookback_hours = 24
+# Seconds after start before a silent agent can count as dead.
+grace_seconds = 120
+# Seconds of silence that make an agent QUIET.
+quiet_seconds = 900
+# Longest a background run may keep an agent alive, in seconds.
+background_max_seconds = 14400
+# Seconds after which an agent's last write is stale.
+stale_seconds = 1200
+# Agent types whose card is named in their first prompt.
+card_roles = ["card-manager", "mobile-builder", "server-builder", "test-builder", "feature-tester"]
+# Agent types that move between cards (their card is the last one they touched).
+floating_roles = ["merger", "promoter", "workflow-builder", "workflow-verifier"]
+# Agent types left out of per-card cost in the token audit.
+shared_roles = ["board-watcher", "merger", "promoter", "workflow-builder", "workflow-verifier", "token-auditor", "fraud-watcher", "sentry-triager"]
+
+[agents.workflow_verifier]
+# Checks each [AGENTS] PR before it merges, and runs a drift check.
+enabled = true
+# Days between drift checks.
+every_days = 7
+# Claude Doc id of the workflow description it compares against.
+workflow_doc_id = ""
+
+[agents.token_auditor]
+# Weekly token audit from the transcripts.
+enabled = true
+# Days between audits (also the audit window).
+every_days = 7
+
+[agents.sentry_triager]
+# Daily Sentry triage.
+enabled = false
+# Days between triages.
+every_days = 1
+# Sentry organization slug.
+org = ""
+# Sentry project slugs.
+projects = []
+# Days of history it compares against.
+history_days = 90
+
+[agents.fraud_watcher]
+# Daily money check.
+enabled = false
+# Days between checks.
+every_days = 1
+
+[agents.app_builders]
+# Android and iOS store builds during a release.
+enabled = false
+
+[models]
+# Model per agent role; the agent file's model: line is rendered from this.
+board-watcher = "sonnet"
+# Card manager.
+card-manager = "sonnet"
+# Feature tester (its AFTER run).
+feature-tester = "opus"
+# Feature tester's BEFORE run (a trial since 2026-10-15).
+feature-tester-before = "sonnet"
+# Test builder.
+test-builder = "opus"
+# Merger.
+merger = "sonnet"
+# Promoter.
+promoter = "sonnet"
+# Workflow builder.
+workflow-builder = "sonnet"
+# Workflow verifier.
+workflow-verifier = "opus"
+# Token auditor.
+token-auditor = "sonnet"
+# Sentry triager.
+sentry-triager = "sonnet"
+# Fraud watcher.
+fraud-watcher = "sonnet"
+
+[adapters]
+# Settings per stack adapter, keyed by adapter name; each adapter documents
+# its own keys (P5). Empty by default.

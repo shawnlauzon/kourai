@@ -1,0 +1,51 @@
+# Example kourai config for one installation. Copy it OUTSIDE git, to
+# <state_dir>/kourai.toml (docs/CONFIG.md), and fill in the blanks.
+# Set only what differs from config/defaults.toml.
+
+repos = [
+  { id = "app", slug = "example-org/example-app", path = "~/Development/github/example-app", base = "main", prose_name = "main", review = { free_paths = ["test/*", "docs/*", "*.md"] } },
+]
+
+[install]
+version = "0.1.0"
+
+[project]
+name = "example"
+state_dir = "~/Development/example_files"
+
+[board]
+id = "AbCd1234"
+name = "Example Development"
+label_prefix = "ari:cloud:trello::label/workspace/000000000000000000000000/"
+
+[board.members]
+user = "000000000000000000000001"
+agent = "000000000000000000000002"
+
+[board.lists.merging]
+id = "000000000000000000000011"
+
+[board.lists.merged]
+id = "000000000000000000000012"
+
+[board.lists.done]
+id = "000000000000000000000013"
+
+[board.labels]
+active = "000000000000000000000021"
+blocked = "000000000000000000000022"
+no_action = "000000000000000000000023"
+conflict = "000000000000000000000024"
+attended = "000000000000000000000025"
+
+[github]
+user_login = "example-user"
+app_id = "1234567"
+app_key_file = "{project.state_dir}/example-bot.private-key.pem"
+bot_name = "example-bot"
+
+[limits]
+card_test_servers = 1
+
+[release]
+enabled = false

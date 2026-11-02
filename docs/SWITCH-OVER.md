@@ -34,9 +34,16 @@ must have no open row before you start.
    and the settings diff first). Then you run `apply`; it copies the hooks first. It adds the plugin and
    rewrites only the marked keys, and it refuses while any agent runs. Run `check`; the new gates are
    registered next to the old ones. Do not remove the old registrations yet.
-5. **Merge the switch.** Open a pull request from `kourai-switch` into runner_city `main` through the
-   normal flow (it needs the switch-over card, the review policy sends it to REVIEW, and you approve on
-   GitHub). Its merge commit carries the trailers `Watcher: restart` and `Main checkout: hold`.
+5. **Merge the switch (the main session, attended; the watcher is stopped, so nothing else moves the card).**
+   The main session opens a pull request from `kourai-switch` into runner_city `main` through
+   `as-claude.sh RunnerCityOrg/runnercity-app` (`gh api` `POST repos/RunnerCityOrg/runnercity-app/pulls`), puts it
+   on the switch-over card (`PR:`, then `AWAITING VERIFIED:`), and starts the workflow verifier and an
+   independent reviewer by hand, as the watcher would. `workflow-checks.sh` must print 0 FAIL on the branch
+   (precondition; see the branch's `.claude/bin/workflow-checks.sh`). The review policy sends it to REVIEW:
+   you approve on GitHub at the head the main session names. The main session then merges it, still by hand:
+   `as-claude.sh RunnerCityOrg/runnercity-app gh pr merge <n> --repo RunnerCityOrg/runnercity-app --merge --match-head-commit <sha> --body "<message>"`
+   where the message has the two trailer lines `Watcher: restart` and `Main checkout: hold` on lines of their
+   own (a default merge message would not carry them). Nobody else merges it.
 6. **Fast-forward the main checkout** (`git -C <checkout> merge --ff-only origin/main`), then delete
    the hold file.
 7. **Start the board.** In a new Claude Code session in the project, run `/kourai:run-board`. Watch the

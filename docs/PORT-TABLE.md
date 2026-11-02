@@ -113,7 +113,7 @@ Every path under `.claude/{agents,commands,bin,hooks,board,skills}` of runner_ci
 | `.claude/bin/test-wait-helpers.sh` | moves | `tests/test-wait-helpers.sh` | ported with fixture config (K7) |
 | `.claude/bin/test-watch-results.sh` | moves | `tests/test-watch-results.sh` | ported with fixture config (K7) |
 | `.claude/bin/test-watcher-reload.sh` | moves | `tests/test-watcher-reload.sh` | ported with fixture config (K7) |
-| `.claude/bin/test-workflow-checks.sh` | moves | `tests/test-workflow-checks.sh` | ported with fixture config (K7) |
+| `.claude/bin/test-workflow-checks.sh` | stays |  | checks a project's `.claude/` layout; the plugin agents call it as `kourai-project workflow-checks.sh` |
 | `.claude/bin/test-zero-file-pr.sh` | moves | `tests/test-zero-file-pr.sh` | ported with fixture config (K7) |
 | `.claude/bin/urgent-hold.sh` | moves | `bin/urgent-hold.sh` | swept |
 | `.claude/bin/usage/agg.py` | moves | `bin/usage/agg.py` |  |
@@ -134,7 +134,7 @@ Every path under `.claude/{agents,commands,bin,hooks,board,skills}` of runner_ci
 | `.claude/bin/verify/refusal_scan.py` | moves | `bin/verify/refusal_scan.py` |  |
 | `.claude/bin/verify/test-refusal-scan.sh` | moves | `bin/verify/test-refusal-scan.sh` |  |
 | `.claude/bin/watcher-reload.sh` | moves | `bin/watcher-reload.sh` | swept |
-| `.claude/bin/workflow-checks.sh` | moves | `bin/workflow-checks.sh` | swept |
+| `.claude/bin/workflow-checks.sh` | stays |  | reads a project's `.claude/` tree (project rules, project agents); plugin agents call it as `kourai-project workflow-checks.sh` |
 | `.claude/board/WORKFLOW.md` | stays |  | pointer to kourai plus one decisions file |
 | `.claude/board/agent-rules.md` | stays |  | RunnerCity code conventions |
 | `.claude/board/decisions-log.md` | stays |  | closed history |

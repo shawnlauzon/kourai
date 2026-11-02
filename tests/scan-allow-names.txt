@@ -6,3 +6,4 @@ docs/UPDATING.md
 docs/VARIABLES.md
 README.md
 rules/phrases.txt
+docs/PORT-TABLE.md

@@ -50,12 +50,15 @@ tmp_err=$(mktemp) || exit 2
 trap 'rm -f "$tmp_err"' EXIT
 start=$SECONDS
 unstick_dir=${RC_CI_UNSTICK_DIR:-$(kc paths.ci_unstick_dir)}
+project_bin=${RC_PROJECT_BIN:-$(kc paths.project_bin)}
 # st_file: the ci-unstick.sh state file of this wait (a PR's run, or the run id), or nothing.
 st_file() {
   if [ "$mode" = run ]; then
     f="$unstick_dir/${repo//\//_}-$id.state"; [ -f "$f" ] && echo "$f"
   else
-    RC_CI_UNSTICK_DIR="$unstick_dir" bash "$here/ci-unstick.sh" state-of-pr "$repo" "$id" "$pr_sha" 2>/dev/null
+    # ci-unstick.sh is the project layer's own script (paths.project_bin); a project without it has no state.
+    [ -x "$project_bin/ci-unstick.sh" ] || return 0
+    RC_CI_UNSTICK_DIR="$unstick_dir" bash "$project_bin/ci-unstick.sh" state-of-pr "$repo" "$id" "$pr_sha" 2>/dev/null
   fi
 }
 st_get() { sed -n "s/^$2=//p" "$1" | head -1; }

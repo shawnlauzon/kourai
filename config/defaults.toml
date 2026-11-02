@@ -65,6 +65,12 @@ deps_commands = []
 worktree_env_placeholders = []
 # Env files symlinked into worktrees from the main checkout.
 worktree_env_links = []
+# Roles that get the empty placeholder files above in their worktree of this repo.
+worktree_env_placeholder_roles = []
+# Roles that get the links above in their worktree of this repo.
+worktree_env_link_roles = []
+# true: put `.claude/worktrees/` in the repo's .git/info/exclude when a worktree is made.
+worktree_git_exclude = false
 # Path prefixes a PR may not add or change a file under (deleting is allowed); the merge gate denies it.
 no_add_paths = []
 

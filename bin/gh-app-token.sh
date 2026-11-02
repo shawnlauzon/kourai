@@ -51,5 +51,5 @@ for name in "${names[@]}"; do
   installation=$(api GET "/repos/$name/installation" 2>/dev/null | jq -r '.id // empty' 2>/dev/null) || installation=""
   [ -n "$installation" ] && break
 done
-[ -n "$installation" ] || { echo "gh-app-token: the GitHub App isn't installed on $repo" >&2; exit 1; }
+[ -n "$installation" ] || { echo "gh-app-token: $(kc github.bot_name) isn't installed on $repo" >&2; exit 1; }
 api POST "/app/installations/$installation/access_tokens" | jq -r .token

@@ -191,7 +191,7 @@ CARD_AGENTS = set(os.environ["AGENT_STATE_ROLES_CARD"].split())
 
 
 def bare(t):
-    """A plugin agent's type is "kourai:<role>"; the role is what the rest of the file uses."""
+    """The type of a plugin agent is kourai:<role>; the role is what the rest of the file uses."""
     return (t or "").split(":", 1)[-1]
 
 # roles whose card is the first card link in their prompt

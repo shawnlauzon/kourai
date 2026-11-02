@@ -1,10 +1,37 @@
 #!/usr/bin/env bash
-# git for tests: local subcommands run the real git; anything that talks to
-# a remote fails like the other fakes.
-case "${1:-}" in
-  push|fetch|pull|clone|ls-remote|remote-https|submodule)
-    exec "$(dirname "$0")/_fake-network-tool" "$@" ;;
-esac
+# git for tests: local subcommands run the real git. A subcommand that talks to a remote runs the real
+# git only when the remote is a local path (the tests use throwaway bare repos); a network URL, or a
+# remote that cannot be told, fails like the other fakes.
 self_dir=$(cd "$(dirname "$0")" && pwd)
 real=$(PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$self_dir" | paste -sd: -) command -v git)
+args=("$@")
+i=0 pre=()
+while [ "$i" -lt "${#args[@]}" ]; do
+  case "${args[$i]}" in
+    -C|-c) pre+=("${args[$i]}" "${args[$((i+1))]:-}"); i=$((i+2)) ;;
+    --git-dir=*|--work-tree=*|--no-pager|-P) pre+=("${args[$i]}"); i=$((i+1)) ;;
+    *) break ;;
+  esac
+done
+sub=${args[$i]:-}
+case "$sub" in
+  push|fetch|pull|clone|ls-remote|remote-https|submodule)
+    rest=("${args[@]:$((i+1))}")
+    target=""
+    for a in "${rest[@]}"; do case "$a" in -*) ;; *) target=$a; break ;; esac; done
+    url=""
+    case "$sub" in
+      clone) url=$target ;;
+      submodule) url="" ;;
+      *) name=${target:-origin}
+         case "$name" in
+           */*|*:*) url=$name ;;
+           *) url=$("$real" "${pre[@]}" config --get "remote.$name.url" 2>/dev/null) ;;
+         esac ;;
+    esac
+    case "$url" in
+      /*|./*|../*) exec "$real" "$@" ;;
+    esac
+    exec "$(dirname "$0")/_fake-network-tool" "$@" ;;
+esac
 exec "$real" "$@"

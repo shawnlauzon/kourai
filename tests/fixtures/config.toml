@@ -1,0 +1,63 @@
+# The fixture config the ported script tests run against. Every name and id is fake. The tests were
+# written against RunnerCity's real values; a mechanical mapping to these fakes is the only change.
+
+repos = [
+  { id = "app", slug = "example-org/example-app", legacy_slugs = ["example-user/example-app-old"], path = "/Users/shawn/Development/github/example-app", base = "main", prose_name = "mobile", release_tag_prefix = "client-build/", card_name_tag = "#", worktree_env_placeholders = [".env", ".env.development", ".env.staging", ".env.production", ".env.local"], worktree_env_placeholder_roles = ["mobile-builder", "merger"], worktree_env_links = [".env", ".env.e2e"], worktree_env_link_roles = ["feature-tester", "test-builder", "promoter"], deps_commands = ["flutter pub get"], no_add_paths = ["docs/ui_tests/"], review = { default = "review", free_paths = ["test/*", "integration_test/*", "test_driver/*", "docs/*", "tool/*", "backlog/*", ".claude/*", "*.md", "analysis_options.yaml", "dart_test.yaml", "devtools_options.yaml", ".gitignore"], flag_paths = ["lib/*"], keep_approval_paths = ["test/*", "integration_test/*", "docs/*"] }, kind = { agents_paths = [".claude/*", "CLAUDE.md", "*.md", "docs/*", "backlog/*"], tests_paths = ["test/*", "integration_test/*", "test_driver/*", "tool/*", ".github/*", "analysis_options.yaml", "dart_test.yaml", "devtools_options.yaml", ".gitignore"] } },
+  { id = "server", slug = "example-org/example-api", path = "/Users/shawn/Development/github/example-api", base = "development", prose_name = "development", card_name_tag = "server #", worktree_env_links = [".env.development.local", ".env.localhost"], worktree_env_link_roles = ["server-builder", "test-builder", "feature-tester", "merger", "promoter"], worktree_git_exclude = true, deps_commands = ["bundle install --quiet"], review = { default = "flag", always_paths = ["infra/*"], free_paths = ["test/*", "tests/*", "docs/*", ".claude/*", "*.md", ".rubocop.yml", ".gitignore"], keep_approval_paths = ["test/*", "tests/*", "docs/*"] }, kind = { agents_paths = [".claude/*", "*.md", "docs/*"], tests_paths = ["test/*", "tests/*", ".github/*", ".rubocop.yml", ".gitignore"] } },
+]
+
+[install]
+version = "0.1.0"
+
+[project]
+name = "example"
+state_dir = "/Users/shawn/Development/example_files"
+
+[board]
+id = "AbCd1234"
+name = "Example Development"
+workspace_id = "000000000000000000000000"
+label_prefix = "ari:cloud:trello::label/workspace/000000000000000000000000/"
+
+[board.members]
+user = "000000000000000000000001"
+agent = "000000000000000000000002"
+internal = ["000000000000000000000001", "000000000000000000000003", "000000000000000000000002"]
+
+[board.lists.todo]
+id = "000000000000000000000014"
+
+[board.lists.merging]
+id = "000000000000000000000011"
+
+[board.lists.merged]
+id = "000000000000000000000012"
+
+[board.lists.done]
+id = "000000000000000000000013"
+
+[board.labels]
+active = "000000000000000000000021"
+blocked = "000000000000000000000022"
+no_action = "000000000000000000000023"
+conflict = "000000000000000000000024"
+attended = "000000000000000000000025"
+waiting_resource = "000000000000000000000026"
+
+[github]
+user_login = "example-user"
+app_id = "1234567"
+app_key_file = "{project.state_dir}/example-bot.private-key.pem"
+bot_name = "example-bot"
+
+[guarded]
+paths = [".github/", ".claude/hooks/", ".claude/settings*.json", ".claude/board/user-setup-changes.md", ".mcp.json", ".claude/bin/as-claude.sh", ".claude/bin/gh-app-token.sh", ".claude/bin/dev-merge-lock.sh", ".claude/bin/run-locked.sh", ".claude/bin/apply-settings-section.sh", ".claude/bin/fraud-stripe.sh", ".claude/bin/schema-dump.sh", ".claude/bin/agent-worktree.sh"]
+
+[limits]
+card_test_servers = 3
+
+[release]
+enabled = true
+
+[agents]
+project = ["mobile-builder", "server-builder", "android-builder", "ios-builder", "test-builder", "feature-tester", "promoter", "fraud-watcher"]

@@ -90,6 +90,9 @@ RunnerCity: server first (`RunnerCityOrg/runnercity-api-server`, base `developme
 | `repos[].deps_commands` | `[]` | `bundle install --quiet`; `flutter pub get` | `bin/agent-worktree.sh:74,76` (env `RC_SKIP_DEPS`) | Worktree setup |
 | `repos[].worktree_env_placeholders` | `[]` | mobile `.env .env.development .env.staging .env.production .env.local` | `bin/agent-worktree.sh:59` | Empty env files in worktrees |
 | `repos[].worktree_env_links` | `[]` | mobile `.env .env.e2e`; server `.env.development.local .env.localhost` | `bin/agent-worktree.sh:63,67` | Env files linked into worktrees |
+| `repos[].worktree_env_placeholder_roles` | `[]` | mobile `[]` (set per project) | `bin/agent-worktree.sh` | Roles that get the empty env placeholder files |
+| `repos[].worktree_env_link_roles` | `[]` | mobile and server builder roles | `bin/agent-worktree.sh` | Roles that get the env files linked in |
+| `repos[].worktree_git_exclude` | `false` | `true` for the mobile repo | `bin/agent-worktree.sh` | Add the placeholder env files to the worktree's git exclude |
 | `repos[].review.always_paths` | `[]` | server `config/routes.rb app/controllers/* app/views/* app/channels/* app/mailers/* config/locales/*`; mobile `lib/* assets/* android/* ios/* web/* macos/* linux/* windows/*` | live `review-policy.sh:119-127` | Always needs review |
 | `repos[].review.free_paths` | `[]` | mobile `test/* integration_test/* test_driver/* docs/* tool/* backlog/* .claude/* *.md analysis_options.yaml dart_test.yaml devtools_options.yaml .gitignore`; server `test/* tests/* docs/* .claude/* *.md .rubocop.yml .gitignore` | live `review-policy.sh:119-127`, R134 | Never needs review |
 | `repos[].review.default` | `"review"` | mobile `review`; server `flag` | review-policy.sh | What a file in no review list needs: `review` or `flag` |

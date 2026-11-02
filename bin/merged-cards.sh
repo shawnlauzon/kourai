@@ -103,6 +103,7 @@ jq -nr --argjson repos "$(kourai-config json repos)" --slurpfile lists "$tmp/lis
   ($actl | from_entries) as $acts | ($lists[0]) as $lists | ($cards[0]) as $cards | ($labels[0]) as $labels
   | def minute: .[0:16] | sub("T"; " ");
   def short: . as $r | ($repos | map(select((.legacy_slugs // []) | index($r) != null)) | first // null) | if . then .slug else $r end;
+  def shortref: (sub("#[0-9]+$"; "")) as $r | (sub("^.*#"; "")) as $n | "\($r | short)#\($n)";
   ($labels | map({key: .id, value: (if .name == "" then .color else .name end)}) | from_entries) as $lname
   | ([$lists[] | select(.name | test("MERGED|RELEASING"))] | sort_by(.pos)[]) as $l
   | ($cards | map(select(.idList == $l.id)) | sort_by(.pos)) as $lc
@@ -117,8 +118,8 @@ jq -nr --argjson repos "$(kourai-config json repos)" --slurpfile lists "$tmp/lis
                   | (scan("github\\.com/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/pull/([0-9]+)"), scan("(?:^|[^A-Za-z0-9_./-])([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)#([0-9]+)")) | "\(.[0] | short)#\(.[1])"]
                   | unique | if length == 0 then "-" else join(", ") end)"
             + " | merged: \([$a[] | select(.type == "commentCard") | .data.text
-                  | (select(startswith("MERGED:")) | capture("^MERGED: (?<r>[A-Za-z0-9_./-]+#[0-9]+) @ (?<s>[0-9a-f]{7,40})") | "\(.r | short)@\(.s[0:12])"),
-                    (select(startswith("MERGED WITH:")) | capture("^MERGED WITH: .*?(?<r>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+) @ (?<s>[0-9a-f]{7,40})") | "with:\(.r | short)@\(.s[0:12])")]
+                  | (select(startswith("MERGED:")) | capture("^MERGED: (?<r>[A-Za-z0-9_./-]+#[0-9]+) @ (?<s>[0-9a-f]{7,40})") | "\(.r | shortref)@\(.s[0:12])"),
+                    (select(startswith("MERGED WITH:")) | capture("^MERGED WITH: .*?(?<r>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[0-9]+) @ (?<s>[0-9a-f]{7,40})") | "with:\(.r | shortref)@\(.s[0:12])")]
                   | unique | if length == 0 then "-" else join(", ") end)"
             + " | creator: \($cre[0][$c.id] // "unknown")"
             + " | reverted: \(if ([$a[] | select(.type == "commentCard") | .data.text | select(startswith("REVERTED:"))] | length) > 0 then "yes" else "no" end)"

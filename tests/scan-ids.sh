@@ -23,9 +23,9 @@ check() { # stdin: "file:line:text" lines
     fi
   done
 }
-git ls-files -z | xargs -0 grep -InE "$bad_pat" 2>/dev/null | grep -vE '^tests/scan-' | check
+check < <(git ls-files -z | xargs -0 grep -InE "$bad_pat" 2>/dev/null | grep -vE '^tests/scan-')
 if [ "${1:-}" ]; then
-  git diff -U0 "$1"..HEAD -- . ':!tests/scan-*' | awk '/^\+\+\+ b\//{f=substr($0,7)} /^\+[^+]/{print f":0:"substr($0,2)}' | grep -E "$bad_pat" | check
+  check < <(git diff -U0 "$1"..HEAD -- . ':!tests/scan-*' | awk '/^\+\+\+ b\//{f=substr($0,7)} /^\+[^+]/{print f":0:"substr($0,2)}' | grep -E "$bad_pat")
 fi
 [ "$fail" = 0 ] && echo "SCAN OK"
 exit $fail

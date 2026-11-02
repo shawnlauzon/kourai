@@ -1,0 +1,78 @@
+# Comment phrases that only agents post (rules.md, Comment glossary). One prefix per line, matched with
+# startswith, case-sensitive. board-wait.py and card-summary.sh read it: a comment from any account but
+# the Claude Code account that starts with one of these is an agent comment posted under the wrong
+# account ("WRONG ACCOUNT:"), never a user instruction and never a user's answer.
+# Not listed (a person may write them, or the Blocked label code already handles them): BLOCKED:,
+# WAITS FOR:, NEXT FOR YOU:, READY FOR YOU:, UNBLOCKED:, RESOLVED:, USER REPLY, CHANGES REQUESTED:
+# (the board watcher posts it, but the user may type it on the card too, rules.md, The review policy).
+# test-board-scripts.sh checks that every glossary phrase an agent posts starts with a prefix below.
+PR:
+REVIEW:
+MERGE READY:
+ROUTED:
+ANSWERED:
+ARCHIVED:
+DEPENDS ON:
+WITH:
+INCLUDED IN:
+MERGED
+CODE REVIEW
+ATTENDED EDIT NEEDED:
+NEEDS SERVER:
+NEEDS MOBILE:
+BEFORE:
+BEFORE FIXED:
+IN PROGRESS
+FINISHED
+TEST PASSED:
+TEST FAILED:
+TEST HANDED BACK:
+BUILDER TRIAL:
+BUILDER TRIAL FAULT:
+BUILDER TRIAL REVIEW:
+INVESTIGATED:
+NO CHANGE NEEDED:
+HANDOFF:
+BUILD PROGRESS:
+READY FOR TESTING:
+AWAITING VERIFIED:
+REFRESH
+CONFLICT RESOLVED:
+PAUSE
+MERGE CONFLICT:
+CHECK FAILED:
+REMERGE ERROR:
+GREEN*:
+PROMOTING:
+RELEASE
+FULL SUITE
+STAGING
+ANDROID
+IOS
+SMOKE
+BETA
+REVERT
+VERIFIED:
+NOT CARRIED:
+VERIFY SELF:
+VERIFY FAILED:
+PLAN:
+PLAN AGREED:
+PLAN CHANGES:
+STUCK:
+FOLLOW-UPS:
+CROSS-REVIEW
+RELEASE BLOCKER:
+URGENT ADDED:
+BUILD PROGRESS:
+VERIFY READY:
+NOT VERIFIED:
+SERVER RECOVERED:
+EMULATOR RESTART:
+SENTRY RESOLVED:
+SENTRY CATCH-UP:
+CANNOT REPRODUCE:
+REPRODUCED:
+RETRYING:
+RETRIED:
+RESTARTED:

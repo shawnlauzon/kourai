@@ -9,17 +9,13 @@ switch-over (P9). P9 cannot start while a row below is open.
 
 | Repo | Branch | Commit | Date |
 |---|---|---|---|
-| RunnerCityOrg/runnercity-app | mobile (`main`) | `913585a3a39730a48d62896f7511ba5fcf8926e7` | 2026-10-17 10:47 -0500 |
+| RunnerCityOrg/runnercity-app | mobile (`main`) | `22fe69b554009078de6f7ff2a27bb64e734fa672` | 2026-11-01 23:08 -0600 |
 
-The live hooks on disk (`runner_city/.claude/hooks/`, partly untracked)
-were read on the same day for `docs/VARIABLES.md`. They are not part of
-the commit. The runner_city card that puts them into git (R1) must merge
-before they are ported.
-
-Files are copied in from the baseline as each step needs them, with
-`git archive 913585a3 .claude/<path>`, never from a working tree. Through
-P2, nothing has been copied: the config loader and defaults are new, and
-the inventory only reads the baseline.
+The four gate hooks were compared by hash with the live ones on disk
+(`docs/PORT-TABLE.md` lists them; the comparison is in the PR body). The files
+are copied from the baseline with `git archive 22fe69b5 .claude/<path>`, never
+from a working tree, and swept so that every id, path and repo name reads from
+config (`tests/scan-ids.sh` keeps it so).
 
 ## What counts as a workflow change
 

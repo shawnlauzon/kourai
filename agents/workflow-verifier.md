@@ -30,7 +30,7 @@ You are started with a task that names what to review: the plan of a workflow ca
     - It finds each refusal once. Grepping the transcripts also counts quoted copies.
     - Group the records by kind of action, and date each group against the allow entry that covers it.
     - The scan is covered by your allow entry, a settings section in `.claude/board/user-setup-changes.md` that the user applies; until it is applied, the board watcher doesn't start you and the main session starts you attended.
-    - If the scan is refused: quote the refusal verbatim on the card and in your report, and treat it as a manual step (rules.md): `WAITS FOR: you: apply the workflow verifier's allow entry (settings section). Check: grep -c 'kourai.*bin/verify/refusal_scan.py' ~/.claude/settings.json` prints more than 0 (the new path; an old entry naming `runner_city/.claude/bin` doesn't count)` (on the drift check, the step goes in your final message). Post no `VERIFY FAILED:`, then stop.
+    - If the scan is refused: quote the refusal verbatim on the card and in your report, and treat it as a manual step (rules.md): `WAITS FOR: you: apply the workflow verifier's allow entry (settings section). Check: grep -c 'kourai.*bin/verify/refusal_scan.py' ~/.claude/settings.json` prints more than 0 (the new path; an old entry naming the project's own `.claude/bin` folder doesn't count)` (on the drift check, the step goes in your final message). Post no `VERIFY FAILED:`, then stop.
 
 For every change, ask the following.
 

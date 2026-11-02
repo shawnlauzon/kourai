@@ -168,7 +168,7 @@ class Inst:
         agents = set(os.listdir(os.path.join(root, "agents"))) if os.path.isdir(os.path.join(root, "agents")) else set()
         def stale(text):
             # A mention by the absolute path, or by the project folder's name (a relative mention such as
-            # "agents defined in runner_city/.claude/agents/"); a bare folder with no file name counts too.
+            # "agents defined in <project>/.claude/agents/"); a bare folder with no file name counts too.
             if proj not in text and os.path.basename(proj) not in text:
                 return False
             for m in re.finditer(r"\.claude/(bin|agents|hooks)/([A-Za-z0-9_.-]*)", text):

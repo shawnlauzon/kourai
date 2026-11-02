@@ -50,10 +50,24 @@ must have no open row before you start.
    merge message would not carry the trailers). Nobody else merges it.
 6. **Fast-forward the main checkout** (`git -C <checkout> merge --ff-only origin/main`), then delete
    the hold file.
-7. **Start the board.** In a new Claude Code session in the project, run `/kourai:run-board`. Watch the
+7. **Rewrite the auto-mode rules (before the board starts).** The classifier reads the rules in
+   `~/.claude/settings.json`, and they still name the old layout: `runner_city/.claude/bin/` scripts,
+   unprefixed agents ("only for agents defined in runner_city/.claude/agents/"), the verifier's refusal scan
+   at the old path. The switch carries a settings section for them (section 52 of
+   `.claude/board/user-setup-changes.md` in runner_city). Run, from the fast-forwarded main checkout,
+   `.claude/bin/apply-settings-section.sh 52`, then check:
+   - `.claude/bin/apply-settings-section.sh 52 --check` exits 0;
+   - `grep -c 'runner_city/.claude/bin' ~/.claude/settings.json` prints 0 (an old path left means a rule was
+     missed or edited since: the apply names it);
+   - `grep -c 'kourai:workflow-builder' ~/.claude/settings.json` prints more than 0;
+   - `grep -c 'plugin-root)/bin/verify/refusal_scan.py' ~/.claude/settings.json` prints 1.
+   Do not start the board before these pass: an agent start by a `kourai:` name or a `kourai-project` call is
+   otherwise judged by rules that describe the old layout. The script backs up the file first
+   (`settings.json.bak-<date>-s52`); `kourai-install rollback` restores the file from its own backup taken at the apply (before this step), which holds the old rules (see Rolling back, step 5).
+8. **Start the board.** In a new Claude Code session in the project, run `/kourai:run-board`. Watch the
    first pass attended: the watcher must report its agents with the `kourai:` prefix and list nothing it
    cannot start.
-8. **Prove the gates fire.** For each registered gate, run its registered command with a payload that
+9. **Prove the gates fire.** For each registered gate, run its registered command with a payload that
    must be refused, and expect a reply containing `"permissionDecision": "deny"`:
    - merge-gate: tool Bash, command `gh pr merge 999999 --repo <repo slug> --merge` (no head commit);
    - staging-gate: tool Bash, a push of the all-zero sha to `refs/heads/staging` of the server repo,
@@ -62,8 +76,8 @@ must have no open row before you start.
    - one payload that reaches the config: `kourai-hook review-policy.sh check <repo slug>#999999` must print
      `ERROR:` (exit 2) after it read `github.user_login` and the repo table, not `needs KOURAI_BIN`.
    Then `kourai-install prove`. Any gate that allows these is a stop: roll back.
-9. **Remove the old gate registrations** in the project settings (the ones that point at the repo's
-   `.claude/hooks/`) once step 8 passed. The switch merge already deleted those files, so they now guard a
+10. **Remove the old gate registrations** in the project settings (the ones that point at the repo's
+   `.claude/hooks/`) once step 9 passed. The switch merge already deleted those files, so they now guard a
    missing file and do nothing.
 
 ## Rolling back
@@ -80,7 +94,7 @@ until the revert is back in the checkout. Settings are therefore the last thing 
    the board stopped until it is back (never roll back the settings first).
 3. **Fast-forward the checkout** (`git -C <checkout> merge --ff-only origin/main`). The old
    `.claude/hooks/*.sh` files are back.
-4. **Prove an old gate denies**, as step 8 does for the kourai gates but with the old command
+4. **Prove an old gate denies**, as step 9 does for the kourai gates but with the old command
    (`bash <checkout>/.claude/hooks/merge-gate.sh` with the same payload): a reply containing
    `"permissionDecision": "deny"`. If it does not, stop; do not roll back the settings.
 5. **Roll back the settings**: put the old registrations back from the backup folder

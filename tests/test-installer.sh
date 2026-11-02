@@ -164,6 +164,40 @@ assert_eq "rollback succeeds" 0 "$rc"
 assert_eq "rollback restores the project settings" "$(cat "$T/project-before.json")" "$(cat "$PROJ/.claude/settings.local.json")"
 assert_eq "rollback restores the user settings" "$(cat "$T/user-before.json")" "$(cat "$T/user-settings.json")"
 
+# stale(): a post-switch rule that names kourai: agents or kourai-project may still name the project's folders and hooks;
+# only a named old script or agent file is stale in it. (The two rules are the settings section's agent-start and
+# workflow-builder rules, with the project's names as placeholders.)
+out=$(python3 -I - "$KOURAI_ROOT" "$PROJ" "$KOURAI_ROOT/tests/fixtures" <<'PY'
+import importlib.machinery, importlib.util, os, sys
+root, proj, fx = sys.argv[1:]
+loader = importlib.machinery.SourceFileLoader("kourai_install", os.path.join(root, "installer", "kourai-install"))
+spec = importlib.util.spec_from_loader("kourai_install", loader)
+mod = importlib.util.module_from_spec(spec); loader.exec_module(mod)
+inst = object.__new__(mod.Inst)
+inst.repo0 = proj
+inst.record = {}
+inst.bin_scripts = lambda r: ["board-wait.sh", "heartbeat.sh"]
+def rule(n):
+    t = open(os.path.join(fx, n)).read()
+    return (t.replace("@PROJ@", proj).replace("@PROJNAME@", os.path.basename(proj))
+             .replace("@PROJECT@", "Example").replace("@KOURAI@", "/kourai").replace("@KOURAI_REPO@", "owner/kourai"))
+def stale(texts):
+    return [w for w, _ in inst.stale_lines(root, {"permissions": {"allow": texts}}, {})]
+for n in ("post52-agent-start-rule.txt", "post52-workflow-builder-rule.txt"):
+    print(n, len(stale([rule(n)])))
+print("pre52 agent-start", len(stale(["Start agents only for agents defined in %s/.claude/agents/" % os.path.basename(proj)])))
+print("pre52 scripts", len(stale(["Run the scripts in %s/.claude/bin/ for the board" % proj])))
+print("mixed script", len(stale(["kourai-project card-test-server.sh, and %s/.claude/bin/board-wait.sh" % proj])))
+print("mixed agent file", len(stale(["kourai: agents, and %s/.claude/agents/merger.md" % proj])))
+PY
+)
+assert_contains "stale(): the post-switch agent-start rule is not stale" "post52-agent-start-rule.txt 0" "$out"
+assert_contains "stale(): the post-switch workflow-builder rule is not stale" "post52-workflow-builder-rule.txt 0" "$out"
+assert_contains "stale(): the pre-switch agent-start text is still stale" "pre52 agent-start 1" "$out"
+assert_contains "stale(): the pre-switch scripts text is still stale" "pre52 scripts 1" "$out"
+assert_contains "stale(): a named old script is stale even beside kourai-project" "mixed script 1" "$out"
+assert_contains "stale(): a named old agent file is stale even beside kourai:" "mixed agent file 1" "$out"
+
 # nothing outside the scratch tree was written
 [ ! -e "$HOME/.claude/plugins/cache/kourai-example" ] && pass || fail "a live plugin cache was written"
 [ -n "${KOURAI_KEEP_TMP:-}" ] || rm -rf "$T"

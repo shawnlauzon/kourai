@@ -15,5 +15,8 @@ grep -q 'grep -c refusal_scan ~/.claude/settings.json' "$f" && fail "the guard '
 grep -q 'plugin-root)/installer/kourai-install" check' "$f" && pass "the drift check runs the installer by its full path" || fail "the drift check runs kourai-install bare"
 grep -q 'Run `kourai-install check`' "$f" && fail "bare kourai-install check is back" || pass "no bare kourai-install check"
 grep -q 'The one exception is `check`' "$here/docs/UPDATING.md" && pass "UPDATING.md allows the verifier's check" || fail "UPDATING.md still says agents never run check"
+odd=$(awk '{n=gsub(/`/,"`"); if (n % 2) print FILENAME ":" NR}' "$f")
+[ -z "$odd" ] && pass "no line of workflow-verifier.md has an odd number of backticks" || fail "odd backtick count at: $odd"
+grep -q "the main checkout's own copy, a plain path" "$f" && fail "the stale 'main checkout's own copy' wording is back" || pass "workflow-checks.sh is described as the project's, run by kourai-project"
 [ "$fails" -eq 0 ] && echo "ALL PASSED" || echo "$fails FAILED"
 [ "$fails" -eq 0 ]

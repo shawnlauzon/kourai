@@ -171,8 +171,13 @@ class Inst:
             # "agents defined in <project>/.claude/agents/"); a bare folder with no file name counts too.
             if proj not in text and os.path.basename(proj) not in text:
                 return False
+            renamed = "kourai:" in text or "kourai-project" in text
             for m in re.finditer(r"\.claude/(bin|agents|hooks)/([A-Za-z0-9_.-]*)", text):
                 kind, name = m.group(1), m.group(2)
+                # A rule that already names kourai: agents or kourai-project (a post-switch rule) may still
+                # describe the project's folders or hooks; only a named old script or agent file is stale there.
+                if renamed and (kind == "hooks" or name == ""):
+                    continue
                 if kind == "hooks" or name == "" or (kind == "bin" and name in bins) or (kind == "agents" and name in agents):
                     return True
             return False

@@ -40,3 +40,7 @@ CI.
   project's `.claude/` folders; `kourai-hook review-policy.sh check` is allowed; the workflow verifier
   runs the refusal scan and the read-only drift check by full path; `docs/SWITCH-OVER.md` has a step that
   rewrites the auto-mode rules before the board starts.
+- Send-back round 3: the installer's stale-line check keeps a post-switch rule that names `kourai:`
+  agents or `kourai-project` (only a named old script or agent file is stale in it); the verifier's
+  stray backtick and stale wording are fixed (tested); `docs/SWITCH-OVER.md` step 5 says attended
+  `kourai:` starts before step 7 may ask permission.

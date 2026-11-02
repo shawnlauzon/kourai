@@ -20,3 +20,4 @@ docs/SWITCH-OVER.md
 docs/HOW-IT-RUNS.md
 docs/WALKTHROUGH.md
 docs/ADAPTERS.md
+tests/split-proof.sh

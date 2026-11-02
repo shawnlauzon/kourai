@@ -8,3 +8,6 @@ host would have to provide.
 
 A change that adds an adapter puts its code here, one folder per adapter, each with
 its own tests under `tests/`.
+
+What a project has to supply to use kourai at all (the project agents, the project scripts the plugin
+calls, `agent-rules.md`) is in `docs/ADAPTERS.md`, "What a project must supply".

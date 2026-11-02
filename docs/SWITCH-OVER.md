@@ -28,7 +28,9 @@ must have no open row before you start.
    check does not fast-forward the live checkout while you work: `<state_dir>/main-checkout-hold`
    (any text, naming why). The live hooks and scripts stay as they are.
 3. **Write the config.** Copy `config/runnercity.example.toml` from `kourai-switch` to
-   `<state_dir>/kourai.toml`, outside git. Check it with `kourai-config check`.
+   `<state_dir>/kourai.toml`, outside git. Check it with `<release checkout>/bin/kourai-config check`
+   (`kourai-config` is not on PATH before the install). `kourai-install check` flags a config changed since
+   the apply (`CONFIG DRIFT`), because the config decides the gates; keep the file out of reach of agents.
 4. **Plan and apply.** From a release checkout of the tag:
    `installer/kourai-install --config <state_dir>/kourai.toml plan`. Read the plan file (the hooks diff
    and the settings diff first). Then you run `apply`; it copies the hooks first. It adds the plugin and
@@ -56,17 +58,35 @@ must have no open row before you start.
    - merge-gate: tool Bash, command `gh pr merge 999999 --repo <repo slug> --merge` (no head commit);
    - staging-gate: tool Bash, a push of the all-zero sha to `refs/heads/staging` of the server repo,
      written exactly as the gate's header describes (`<sha>:refs/heads/staging`);
-   - merged-comment-gate: tool `mcp__trello__trelloWriteCard`, a comment `MERGED: <repo slug>#999999 @ 0000000`.
+   - merged-comment-gate: tool `mcp__trello__trelloWriteCard`, a comment `MERGED: <repo slug>#999999 @ 0000000`;
+   - one payload that reaches the config: `kourai-hook review-policy.sh check <repo slug>#999999` must print
+     `ERROR:` (exit 2) after it read `github.user_login` and the repo table, not `needs KOURAI_BIN`.
    Then `kourai-install prove`. Any gate that allows these is a stop: roll back.
 9. **Remove the old gate registrations** in the project settings (the ones that point at the repo's
-   `.claude/hooks/`) once step 8 passed, and delete those files in a normal card.
+   `.claude/hooks/`) once step 8 passed. The switch merge already deleted those files, so they now guard a
+   missing file and do nothing.
 
 ## Rolling back
 
-In reverse, and each step on its own: put the old registrations back (they are in the backup folder
-`<state_dir>/kourai/backups/<timestamp>/`), `installer/kourai-install --config <state_dir>/kourai.toml rollback`,
-stop the board, revert the switch commit on runner_city `main` with `Watcher: restart` in the revert,
-fast-forward the checkout, restart `/run-board`. Rollback needs no network.
+The order matters: **the gates are never off while the board runs.** After the switch merge the repo's
+`.claude/hooks/` files are gone, so the old registrations (`[ ! -f <file> ] || bash <file>`) pass everything
+until the revert is back in the checkout. Settings are therefore the last thing to roll back, never the first.
+
+1. **Stop the board** (the watcher and every agent; `agent-state.sh` prints no live agent). Nothing starts
+   again until step 5. The kourai gates stay registered and keep guarding the main session.
+2. **Revert the switch commit on runner_city `main`**: a pull request carrying the revert (the merge message
+   has `Watcher: restart`), approved by you on GitHub and merged by the main session as in step 5. This is a
+   push, so **it needs the network**. Without the network do not go on: leave the kourai gates registered and
+   the board stopped until it is back (never roll back the settings first).
+3. **Fast-forward the checkout** (`git -C <checkout> merge --ff-only origin/main`). The old
+   `.claude/hooks/*.sh` files are back.
+4. **Prove an old gate denies**, as step 8 does for the kourai gates but with the old command
+   (`bash <checkout>/.claude/hooks/merge-gate.sh` with the same payload): a reply containing
+   `"permissionDecision": "deny"`. If it does not, stop; do not roll back the settings.
+5. **Roll back the settings**: put the old registrations back from the backup folder
+   `<state_dir>/kourai/backups/<timestamp>/`, then `installer/kourai-install --config <state_dir>/kourai.toml rollback`
+   (this step alone needs no network; it restores the whole `~/.claude/settings.json` from the backup, so
+   re-apply any unrelated edit made since the apply). Restart `/run-board`.
 
 ## Follow-ups after the switch
 

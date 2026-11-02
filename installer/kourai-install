@@ -342,7 +342,8 @@ def cmd_plan(i):
     cur_u = read_json(i.user_settings, {})
     new_p = i.render_project_settings(root, i.version, cur_p)
     new_u = i.render_user_settings(root, cur_u)
-    unchanged = (new_p == cur_p and new_u == cur_u and old == i.version and not i.hook_drift(i.version))
+    config_moved = bool(i.record.get("config_sha")) and sha(i.config) != i.record["config_sha"]
+    unchanged = (new_p == cur_p and new_u == cur_u and old == i.version and not i.hook_drift(i.version) and not config_moved)
     if unchanged:
         shutil.rmtree(os.path.join(i.kdir, "staged", i.version.replace(":", "-")), ignore_errors=True)
         print("Nothing to change: %s is installed." % i.version)
@@ -538,6 +539,10 @@ def cmd_check(i):
             problems.append("release folder has no .kourai-commit")
     for b in i.hook_drift(i.version):
         problems.append("GATE DRIFT: " + b)
+    # The config decides the gates (github.user_login, the review tables, guarded.paths, no_add_paths) and lives
+    # outside git: a change since the apply is flagged until plan and apply record the new file.
+    if i.record.get("config_sha") and os.path.exists(i.config) and sha(i.config) != i.record["config_sha"]:
+        problems.append("CONFIG DRIFT: %s changed since the apply (it decides the gates); review it, then run plan and apply to record it" % i.config)
     cur_p = read_json(i.project_settings, {})
     owned = i.record.get(MARK, {})
     for a in owned.get("allow", []):

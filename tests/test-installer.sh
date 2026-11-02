@@ -113,6 +113,20 @@ cp "$SRC/hooks/merge-gate.sh" "$HOOKS/merge-gate.sh"
 out=$(KI check 2>&1); rc=$?
 assert_eq "check passes again once the gate is restored" 0 "$rc"
 
+# config drift: the config decides the gates (login, review tables, guarded paths) and lives outside git
+cp "$CFG" "$T/cfg-applied.toml"
+echo "# edited after the apply" >> "$CFG"
+out=$(KI check 2>&1); rc=$?
+assert_eq "check fails on a config changed since the apply" 1 "$rc"
+assert_contains "check says CONFIG DRIFT" "CONFIG DRIFT" "$out"
+out=$(KI plan 2>&1); rc=$?
+assert_eq "plan does not call a changed config nothing to change" 10 "$rc"
+cp "$T/cfg-applied.toml" "$CFG"
+out=$(KI check 2>&1); rc=$?
+assert_eq "check passes once the config is the applied one" 0 "$rc"
+out=$(KI plan 2>&1); rc=$?
+assert_eq "plan has nothing to change again" 0 "$rc"
+
 # a config edit after plan is refused
 echo "# edit" >> "$CFG"
 out=$(KI plan 2>&1)

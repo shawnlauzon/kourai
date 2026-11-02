@@ -65,8 +65,12 @@ deps_commands = []
 worktree_env_placeholders = []
 # Env files symlinked into worktrees from the main checkout.
 worktree_env_links = []
+# Path prefixes a PR may not add or change a file under (deleting is allowed); the merge gate denies it.
+no_add_paths = []
 
 [_schema.items.repos.defaults.review]
+# What a file in no list below needs: "review" (the user's approval) or "flag" (review unless the PR body says "App-visible: no").
+default = "review"
 # Paths whose change always needs the user's review (globs).
 always_paths = []
 # Paths whose change never needs review (globs).
@@ -123,6 +127,20 @@ agents_status_cache = "{project.state_dir}/agents-status-cache"
 board_wait_state = "{project.state_dir}/board-wait.state.json"
 # Heartbeat file /run-board reads to see whether a watcher runs.
 board_watcher_heartbeat = "{project.state_dir}/board-watcher.heartbeat"
+# The user's own state files for the project layer's scripts (kourai-project runs them from here).
+project_bin = "{repos.0.path}/.claude/bin"
+# Active-card files the merger writes (board-wait ignores a stale one).
+active_card_dir = "{project.state_dir}/active"
+# The since-cursor of board-watch.sh.
+board_watch_since = "{project.state_dir}/board-watch.since"
+# Cache of agent-state.sh transcript scans.
+agent_state_cache = "{project.state_dir}/agent-state-cache"
+# Cache of workflow-checks.sh.
+workflow_checks_cache = "{project.state_dir}/workflow-checks-cache"
+# Folder of ci-unstick marks.
+ci_unstick_dir = "{project.state_dir}/ci-unstick"
+# Folders whose free space board-wait watches and offers to clean (build caches, temp folders).
+disk_folders = ["~/.gradle"]
 # Where installed gate hooks are copied, per version (see docs/UPDATING.md).
 hooks_dir = "{project.state_dir}/kourai/hooks"
 # Agent worktrees, relative to each repo's checkout.
@@ -135,6 +153,8 @@ provider = "trello"
 id = ""
 # Name used in prose, e.g. "RunnerCity Development".
 name = ""
+# Trello workspace id (the ari: card link uses it).
+workspace_id = ""
 # Label id prefix for the Trello MCP (ari:cloud:trello::label/workspace/<workspace id>/).
 label_prefix = ""
 
@@ -143,6 +163,8 @@ label_prefix = ""
 user = ""
 # The Trello member id every agent posts as.
 agent = ""
+# Member ids whose cards and comments are the team's own, not a reporter's (the user and agent are always included).
+internal = []
 
 [board.lists.proposed]
 # Name word that finds the list (lists may carry emoji).
@@ -239,6 +261,8 @@ active = ""
 blocked = ""
 # "No action required" (purple).
 no_action = ""
+# "Waiting on a resource" label (a test server, a lock), or "".
+waiting_resource = ""
 # "Merge conflict" (orange).
 conflict = ""
 # "Needs attended session" (yellow).
@@ -253,6 +277,12 @@ app_id = ""
 app_key_file = ""
 # The App's bot name, without [bot].
 bot_name = ""
+
+[agents]
+# Agents that ship in the plugin; started as kourai:<name>.
+plugin = ["board-watcher", "card-manager", "merger", "workflow-builder", "workflow-verifier", "code-reviewer", "time-optimizer", "token-auditor", "sentry-triager"]
+# Agents the project layer keeps in its own .claude/agents/; started by their bare name.
+project = []
 
 [guarded]
 # Paths whose change always needs the user's review, in every repo.
@@ -274,7 +304,7 @@ builders_per_aspect = 1
 # Tokens in an agent's latest request before board-wait prints CONTEXT: (hand off).
 context_ceiling_tokens = 150000
 # Roles checked against the context ceiling.
-context_ceiling_roles = ["card-manager", "promoter", "feature-tester", "mobile-builder", "server-builder", "test-builder"]
+context_ceiling_roles = ["card-manager", "promoter", "feature-tester", "mobile-builder", "server-builder", "test-builder", "workflow-builder", "merger", "workflow-verifier"]
 # The board watcher compacts its own context at this many tokens (its autoCompactWindow).
 watcher_compact_tokens = 100000
 # Changed files at or above which the merger runs the full unit suite.
@@ -376,9 +406,11 @@ background_max_seconds = 14400
 # Seconds after which an agent's last write is stale.
 stale_seconds = 1200
 # Agent types whose card is named in their first prompt.
-card_roles = ["card-manager", "mobile-builder", "server-builder", "test-builder", "feature-tester"]
+card_roles = ["card-manager", "mobile-builder", "server-builder", "test-builder", "feature-tester", "code-reviewer"]
 # Agent types that move between cards (their card is the last one they touched).
 floating_roles = ["merger", "promoter", "workflow-builder", "workflow-verifier"]
+# Agent types whose worktree folders are <role>-<card link> (board-wait's cleanup knows them).
+worktree_roles = ["feature-tester", "mobile-builder", "server-builder", "test-builder", "workflow-builder"]
 # Agent types left out of per-card cost in the token audit.
 shared_roles = ["board-watcher", "merger", "promoter", "workflow-builder", "workflow-verifier", "token-auditor", "fraud-watcher", "sentry-triager"]
 

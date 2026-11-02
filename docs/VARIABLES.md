@@ -43,19 +43,19 @@ default and are required.
 | Key | Default | RunnerCity | Where today | What it does |
 |---|---|---|---|---|
 | `board.provider` | `trello` | same | implied everywhere | Tracker |
-| `board.id` | required | `7Tch9xIX` | R27; `bin/board-wait.py:111`, `board-snapshot.sh:40`, `release-gap.sh:24`, `board-watch.sh:17`; hooks `merge-gate.sh:24` (live :38), `staging-gate.sh:22` (live :27) | The board |
+| `board.id` | required | `<board-id>` | R27; `bin/board-wait.py:111`, `board-snapshot.sh:40`, `release-gap.sh:24`, `board-watch.sh:17`; hooks `merge-gate.sh:24` (live :38), `staging-gate.sh:22` (live :27) | The board |
 | `board.name` | `""` | `RunnerCity Development` | R1, `commands/run-board.md:2`, `agents/board-watcher.md:3` | Prose name |
-| `board.label_prefix` | `""` | `ari:cloud:trello::label/workspace/699f1337f6b2c09dad36f42c/` | R78 | Label ids for the Trello MCP |
-| `board.members.user` | required | `5481d72a18acda04c8c30525` | `hooks/merge-gate.sh:26`, `merged-comment-gate.sh:32`, live `staging-gate.sh:31`, `bin/board-watch.sh:11`, `board-snapshot.sh:41` | Whose comments are instructions and sign-offs |
-| `board.members.agent` | required | `6ac171340cd94c75ebec054b` | `bin/board-wait.py:112`, `card-summary.sh:59`, `agents-status.sh:76`, `board-snapshot.sh:42` | The account agents post as |
+| `board.label_prefix` | `""` | `ari:cloud:trello::label/workspace/<workspace-id>/` | R78 | Label ids for the Trello MCP |
+| `board.members.user` | required | `<id>` | `hooks/merge-gate.sh:26`, `merged-comment-gate.sh:32`, live `staging-gate.sh:31`, `bin/board-watch.sh:11`, `board-snapshot.sh:41` | Whose comments are instructions and sign-offs |
+| `board.members.agent` | required | `<id>` | `bin/board-wait.py:112`, `card-summary.sh:59`, `agents-status.sh:76`, `board-snapshot.sh:42` | The account agents post as |
 | `board.lists.<role>.name` | the 11 names below | same | `bin/board-wait.py:279-280` (13 words with retired names), `release-gap.sh:46-47`, `board-snapshot.sh:113-114`, R31-41 | Finds a list by its name word |
-| `board.lists.<role>.id` | `""` | merging `6ac1312fa9595d5f08b34c45`, merged `6ac169193b554cd7f0909eb2`, done `6abfef3e5e85ae5f3a8be218` | live `merged-comment-gate.sh:29-31`; tracked `merge-gate.sh:25`, `merged-comment-gate.sh:29-31` (old APPROVED and INTEGRATION_TEST ids) | Gates check list ids |
+| `board.lists.<role>.id` | `""` | merging `<id>`, merged `<id>`, done `<id>` | live `merged-comment-gate.sh:29-31`; tracked `merge-gate.sh:25`, `merged-comment-gate.sh:29-31` (old APPROVED and INTEGRATION_TEST ids) | Gates check list ids |
 | `board.lists.<role>.aliases` | proposed `BRAINSTORM`, questions `WAITING FOR CLARITY`, merging `APPROVED`, merged `READY FOR STAGING` | same | `bin/board-wait.py:279-280`, `agents/token-auditor.md:71` | Retired names still matched |
-| `board.labels.active` | `""` | `6abfef3e5e85ae5f3a8be2f2` | R82, `bin/board-wait.py:116` | Actively worked (green) |
-| `board.labels.blocked` | `""` | `6acd1c78d90f2640cfa9c163` | R83, `bin/board-wait.py:113` | Blocked (dark red) |
-| `board.labels.no_action` | `""` | `6abfef3e5e85ae5f3a8be2f4` | R84, `bin/board-wait.py:117` | No action required (purple) |
-| `board.labels.conflict` | `""` | `6abfef3e5e85ae5f3a8be2f7` | R85, `bin/board-wait.py:115`, `agents/merger.md:39` | Merge conflict (orange) |
-| `board.labels.attended` | `""` | `6abfef3e5e85ae5f3a8be2f6` | R86, `bin/board-wait.py:114`, `agents/workflow-builder.md:71` | Needs attended session (yellow) |
+| `board.labels.active` | `""` | `<id>` | R82, `bin/board-wait.py:116` | Actively worked (green) |
+| `board.labels.blocked` | `""` | `<id>` | R83, `bin/board-wait.py:113` | Blocked (dark red) |
+| `board.labels.no_action` | `""` | `<id>` | R84, `bin/board-wait.py:117` | No action required (purple) |
+| `board.labels.conflict` | `""` | `<id>` | R85, `bin/board-wait.py:115`, `agents/merger.md:39` | Merge conflict (orange) |
+| `board.labels.attended` | `""` | `<id>` | R86, `bin/board-wait.py:114`, `agents/workflow-builder.md:71` | Needs attended session (yellow) |
 
 The 11 list roles, in board order: `proposed` (PROPOSED), `bugs` (BUG REPORTS), `todo` (TODO), `questions` (QUESTIONS), `building` (BUILDING), `testing` (TESTING), `review` (REVIEW), `merging` (MERGING), `merged` (MERGED), `releasing` (RELEASING), `done` (DONE). Their keys: `board.lists.proposed.name`, `board.lists.proposed.id`, `board.lists.proposed.aliases`, `board.lists.bugs.name`, `board.lists.bugs.id`, `board.lists.bugs.aliases`, `board.lists.todo.name`, `board.lists.todo.id`, `board.lists.todo.aliases`, `board.lists.questions.name`, `board.lists.questions.id`, `board.lists.questions.aliases`, `board.lists.building.name`, `board.lists.building.id`, `board.lists.building.aliases`, `board.lists.testing.name`, `board.lists.testing.id`, `board.lists.testing.aliases`, `board.lists.review.name`, `board.lists.review.id`, `board.lists.review.aliases`, `board.lists.merging.name`, `board.lists.merging.id`, `board.lists.merging.aliases`, `board.lists.merged.name`, `board.lists.merged.id`, `board.lists.merged.aliases`, `board.lists.releasing.name`, `board.lists.releasing.id`, `board.lists.releasing.aliases`, `board.lists.done.name`, `board.lists.done.id`, `board.lists.done.aliases`.
 
@@ -67,7 +67,7 @@ There are no per-list WIP numbers today. The WIP limits are `limits.card_test_se
 |---|---|---|---|---|
 | `github.user_login` | required | `shawnlauzon` | `bin/board-wait.py:119`, `hooks/merge-gate.sh:27`, `merged-comment-gate.sh:33`, live `review-policy.sh:65` | Only this login's review approves |
 | `github.app_id` | required | `5190062` | `bin/gh-app-token.sh:11` | App the agents act as |
-| `github.app_key_file` | required | `~/Development/runner_city_files/runnercity-claude.2026-10-04.private-key.pem` | `bin/gh-app-token.sh:12` | App private key |
+| `github.app_key_file` | required | `<app key file>` | `bin/gh-app-token.sh:12` | App private key |
 | `github.bot_name` | `""` | `runnercity-claude` | `bin/as-claude.sh:2-5`, `bin/gh-app-token.sh:38`, R253 | Bot identity in prose and errors |
 | `guarded.paths` | `.github/`, `.claude/hooks/`, `.claude/settings*.json`, `.mcp.json` | also `.claude/board/user-setup-changes.md`, `as-claude.sh`, `gh-app-token.sh`, `dev-merge-lock.sh`, `run-locked.sh`, `apply-settings-section.sh`, `fraud-stripe.sh`, `schema-dump.sh`, `agent-worktree.sh`, server `infra/` | live `review-policy.sh:100-104` | Always need the user's review |
 
@@ -92,6 +92,8 @@ RunnerCity: server first (`RunnerCityOrg/runnercity-api-server`, base `developme
 | `repos[].worktree_env_links` | `[]` | mobile `.env .env.e2e`; server `.env.development.local .env.localhost` | `bin/agent-worktree.sh:63,67` | Env files linked into worktrees |
 | `repos[].review.always_paths` | `[]` | server `config/routes.rb app/controllers/* app/views/* app/channels/* app/mailers/* config/locales/*`; mobile `lib/* assets/* android/* ios/* web/* macos/* linux/* windows/*` | live `review-policy.sh:119-127` | Always needs review |
 | `repos[].review.free_paths` | `[]` | mobile `test/* integration_test/* test_driver/* docs/* tool/* backlog/* .claude/* *.md analysis_options.yaml dart_test.yaml devtools_options.yaml .gitignore`; server `test/* tests/* docs/* .claude/* *.md .rubocop.yml .gitignore` | live `review-policy.sh:119-127`, R134 | Never needs review |
+| `repos[].review.default` | `"review"` | mobile `review`; server `flag` | review-policy.sh | What a file in no review list needs: `review` or `flag` |
+| `repos[].no_add_paths` | `[]` | mobile `docs/ui_tests/` | merge-gate.sh | Prefixes a PR may not add or change files under (screenshots are never in git) |
 | `repos[].review.flag_paths` | `[]` | server: everything else (needs `App-visible:`) | live `review-policy.sh:95,125-127`, `bin/pr-ready.sh:87` | Review only when the PR says `App-visible: yes` |
 | `repos[].review.keep_approval_paths` | `[]` | mobile `test/ integration_test/ docs/`; server `test/ tests/ docs/` | live `review-policy.sh:182`, R134 | Commits after approval that keep it |
 | `repos[].kind.agents_paths` | `[]` | mobile `.claude/* CLAUDE.md *.md docs/* backlog/*` (not `docs/ui_tests/*`); server `.claude/* *.md docs/*` | `bin/card-kind.sh:64-78` | [AGENTS] kind |
@@ -264,6 +266,24 @@ Reported, not fixed (kourai copies runner_city as it is):
 2. The full API suite takes "9 to 25 minutes" in `merger.md:76` and W115, "about 9 to 15 minutes" in W96.
 3. `bin/test-server.sh:465` checks servers 1 to 4 as taken, whatever the server count.
 4. The tracked `hooks/base-push-gate.sh` maps `main` to `shawnlauzon/runner_city`; live hooks use `RunnerCityOrg/runnercity-app`.
-5. List id `6ac1312fa9595d5f08b34c45` is `APPROVED_LIST` in the tracked hooks and `MERGING_LIST` live.
+5. List id `<id>` is `APPROVED_LIST` in the tracked hooks and `MERGING_LIST` live.
 6. The hooks have no overrides at all (board, `trello.env`, member and list ids), while most bin scripts accept env overrides.
 7. The 12-hour gap is written in `release-gap.sh:25` and again in the `board-wait.py:39` docstring.
+
+## Added by the script sweep
+
+| Key | Default | RunnerCity | Where today | What it does |
+|---|---|---|---|---|
+| `paths.project_bin` | `{repos.0.path}/.claude/bin` | same | new | Where `kourai-project` finds the project layer's own scripts |
+| `paths.active_card_dir` | `{project.state_dir}/active` | same | `active-card.sh` | Active-card files |
+| `paths.board_watch_since` | `{project.state_dir}/board-watch.since` | same | `board-watch.sh` | Since-cursor of the old watch script |
+| `paths.agent_state_cache` | `{project.state_dir}/agent-state-cache` | same | `agent-state.sh` | Transcript scan cache |
+| `paths.workflow_checks_cache` | `{project.state_dir}/workflow-checks-cache` | same | `workflow-checks.sh` | Check cache |
+| `paths.ci_unstick_dir` | `{project.state_dir}/ci-unstick` | same | `ci-wait.sh` | ci-unstick marks |
+| `board.workspace_id` | `""` | the board's workspace | `card-summary.sh`, `standing-card.sh` | Trello workspace id |
+| `board.members.internal` | `[]` | the team's member ids | `merged-cards.sh` | Members whose cards are not a reporter's |
+| `board.labels.waiting_resource` | `""` | the label | `board-wait.py` | Waiting-on-a-resource label |
+| `agents.plugin` | the nine plugin agents | same | new | Agents started as `kourai:<name>` |
+| `agents.project` | `[]` | the project agents | new | Agents started by bare name |
+| `paths.disk_folders` | `~/.gradle` | `~/.gradle`, the agents' temp folder | `board-wait.py` | Folders board-wait offers to clean |
+| `liveness.worktree_roles` | the five builder/tester roles | same | `board-wait.py` | Roles whose worktree folders board-wait cleans |

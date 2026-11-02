@@ -39,7 +39,7 @@ TOML rather than YAML, because:
   PyYAML, which is not installed on this Mac, and the hooks must not depend
   on a pip install.
 - It has comments, unlike JSON.
-- Its types are explicit: `7Tch9xIX`, `0123` or `no` stay strings when
+- Its types are explicit: `<board-id>`, `0123` or `no` stay strings when
   quoted, where YAML would turn some of them into numbers or booleans.
 
 Top-level keys (only `repos`) must come before the first `[table]`.
@@ -96,5 +96,5 @@ As each RunnerCity script is copied into `bin/`, its constants become
 config reads. The env overrides scripts already accept (`RC_CARD_TEST_SERVERS`,
 `BOARD_WAIT_POLL`, `RELEASE_GAP_HOURS` and the others listed in
 `docs/VARIABLES.md`) keep working for tests, and win over the config when set.
-P2 is done when no 24-character id, board link or `/Users/shawn` path is
+P2 is done when no 24-character id, board link or `/Users/<you>` path is
 left outside a config file, and the tests pass with a fake config.

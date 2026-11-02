@@ -1,0 +1,7 @@
+CHANGELOG.md
+config/defaults.toml
+docs/CONFIG.md
+docs/SYNC.md
+docs/UPDATING.md
+docs/VARIABLES.md
+README.md

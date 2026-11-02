@@ -102,4 +102,31 @@ add_rules 3; commit "big 4" "$big"$'\n\n'"Watcher: restart"
 pipe_runs=$( (trap '' PIPE; for _ in $(seq 1 10); do wr check; done) 2>&1 )
 pipe_seen=$(grep -c "RESTART: Watcher: restart trailer" <<<"$pipe_runs")
 ok "trailer seen through 200 KB of bodies, 10 runs" "10" "$pipe_seen"
+# Two-layer layout (after the switch-over): the app repo no longer holds board-watcher.md (the plugin ships it) and
+# the project rules are project.rules_file, here in another folder than the default.
+fixture_cfg=$KOURAI_CONFIG
+setup2() {
+  rm -rf "$WR_REPO" "$WR_FILES"; mkdir -p "$WR_REPO/.claude/board" "$WR_REPO/.claude/agents" "$WR_REPO/docs"
+  G init -q; G config user.email t@t; G config user.name t
+  { echo "# rules"; for i in $(seq 1 400); do echo "rule line $i"; done; } >"$WR_REPO/docs/project-rules.md"
+  printf -- '---\nname: board-watcher\n---\nline a\n' >"$WR_REPO/.claude/agents/board-watcher.md"
+  commit base2
+  G rm -q .claude/agents/board-watcher.md; commit "switch: the agent moves to the plugin"
+  sed "s#^name = \"example\"#name = \"example\"\nrules_file = \"$WR_REPO/docs/project-rules.md\"#" "$fixture_cfg" >"$tmp/two-layer.toml"
+}
+setup2
+del=$(G log -1 --format=%h -- .claude/agents/board-watcher.md)
+saved_cfg=$KOURAI_CONFIG; export KOURAI_CONFIG=$tmp/two-layer.toml
+out=$(wr baseline --agent-commit "$del" 2>&1); rc=$?
+ok "two-layer: baseline with the deletion commit succeeds" "BASELINE:" "$out"
+ok "two-layer: baseline exit 0" "0" "$rc"
+ok "two-layer: the baseline copy of the agent is the plugin's" "board-watcher" "$(head -5 "$WR_FILES/board-watcher-reload/board-watcher.md")"
+ok "two-layer: NONE at base" "NONE" "$(wr check)"
+for i in 1 2 3; do echo "new $i" >>"$WR_REPO/docs/project-rules.md"; done; commit r2
+ok "two-layer: a rules change is seen (INPLACE)" "INPLACE: rules.md" "$(wr check)"
+ok "two-layer: diff runs" "DIFF:" "$(wr diff)"
+ok "two-layer: APPLIED after diff" "APPLIED:" "$(wr check)"
+setup2; wr baseline >"$tmp/b.out" 2>&1; cat "$tmp/b.out"
+ok "two-layer: baseline without --agent-commit succeeds" "plugin" "$(cat "$WR_FILES/board-watcher-reload.state")"
+export KOURAI_CONFIG=$saved_cfg
 [ "$failures" = 0 ] && echo "ALL PASSED" || { echo "$failures FAILED"; exit 1; }

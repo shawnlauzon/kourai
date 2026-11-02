@@ -1,0 +1,9 @@
+{
+  "event": "PreToolUse",
+  "hooks": [
+    {"file": "merge-gate.sh", "matcher": "Bash", "timeout": 60},
+    {"file": "staging-gate.sh", "matcher": "Bash", "timeout": 60},
+    {"file": "merged-comment-gate.sh", "matcher": "mcp__trello__trelloWriteCard", "timeout": 60}
+  ],
+  "helpers": ["review-policy.sh"]
+}

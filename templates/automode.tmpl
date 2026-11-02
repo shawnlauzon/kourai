@@ -1,0 +1,4 @@
+# Auto-mode allow rules the installer owns in ~/.claude/settings.json (the classifier reads only user
+# settings). One rule per paragraph; {key} fills a value from the installation's config.
+[kourai-{project.name}] The board agents of the {project.name} installation run the kourai plugin's scripts by bare name (they are on the plugin's bin/ PATH) from the main checkout {repos.0.path} and its worktrees under {repos.0.path}/{paths.worktree_root}, and the project layer's scripts through kourai-project; they write logs under {project.state_dir}.
+[kourai-{project.name}] The agents make every GitHub write through as-claude.sh as the GitHub App {github.bot_name}, never as the user, and read Trello only through the Trello MCP.

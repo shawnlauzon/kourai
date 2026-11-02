@@ -100,7 +100,7 @@ docs_only_paths = []
 
 [install]
 # The kourai version this installation runs (a tag kourai--v<version>).
-version = "0.1.0"
+version = "0.1.0-rc1"
 # Where kourai releases come from.
 source_repo = "shawnlauzon/kourai"
 

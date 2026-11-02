@@ -1,0 +1,6 @@
+# Bash allow rules the installer owns in the project's settings.local.json (one per line).
+# {bin_scripts} expands to one `Bash(<name> *)` and one `Bash(<name>)` line per script in the
+# release's bin/ (the plugin's bin/ is on the Bash PATH, so agents call them by bare name).
+{bin_scripts}
+Bash(kourai-config *)
+Bash(kourai-project *)

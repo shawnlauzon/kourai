@@ -1,6 +1,6 @@
 {
   "name": "kourai",
-  "version": "0.1.0",
+  "version": "0.1.0-rc1",
   "description": "A Trello-driven fleet of Claude Code agents that takes cards from approval through tests, review, merge and release.",
   "author": {
     "name": "Shawn Lauzon"

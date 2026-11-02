@@ -1,0 +1,560 @@
+#!/usr/bin/env python3
+"""kourai-install: install, update and roll back one kourai installation (docs/UPDATING.md).
+
+  kourai-install [options] plan | apply | rollback | check | prove
+
+Run only by the user, attended. Options:
+  --config FILE            the installation's kourai.toml (default $KOURAI_CONFIG)
+  --user-settings FILE     the user settings file with autoMode (default ~/.claude/settings.json)
+  --project-settings FILE  the project settings file (default <repos.0.path>/.claude/settings.local.json)
+  --source REPO            where releases are fetched from (default https://github.com/<install.source_repo>.git)
+  --yes                    rollback: overwrite a config edited since the apply without asking
+  --skip-claude            do not run `claude plugin ...` (the files are still written)
+Environment: KOURAI_CLAUDE_BIN (the claude binary, default `claude`), KOURAI_INSTALL_AGENT_CHECK
+(a command printing agent-state lines; default the release's agent-state.sh).
+"""
+import argparse, datetime, difflib, hashlib, json, os, re, shutil, subprocess, sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SELF_ROOT = os.path.dirname(HERE)
+MARK = "kourai"           # key under which installed.json records what the installer owns
+TAG_FMT = "kourai--v%s"
+
+
+def die(msg, code=1):
+    print("kourai-install: " + msg, file=sys.stderr)
+    sys.exit(code)
+
+
+def run(cmd, cwd=None, env=None, check=True, input=None):
+    r = subprocess.run(cmd, cwd=cwd, env=env, capture_output=True, text=True, input=input)
+    if check and r.returncode != 0:
+        die("%s failed: %s" % (" ".join(cmd[:4]), (r.stdout + r.stderr).strip()[:400]))
+    return r
+
+
+def sha(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        h.update(f.read())
+    return h.hexdigest()
+
+
+def tree_hashes(root, skip=(".git",)):
+    out = {}
+    for dp, dns, fns in os.walk(root):
+        dns[:] = sorted(d for d in dns if d not in skip and d != "__pycache__")
+        for fn in sorted(fns):
+            p = os.path.join(dp, fn)
+            out[os.path.relpath(p, root)] = sha(p)
+    return out
+
+
+def read_json(path, default):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return default
+
+
+def write_json(path, data):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path + ".tmp", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, sort_keys=False)
+        f.write("\n")
+    os.replace(path + ".tmp", path)
+
+
+def read_text(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return f.read()
+    except FileNotFoundError:
+        return ""
+
+
+class Inst:
+    def __init__(self, a):
+        self.a = a
+        self.config = os.path.abspath(a.config or os.environ.get("KOURAI_CONFIG") or die("no --config and no $KOURAI_CONFIG"))
+        if not os.path.isfile(self.config):
+            die("no such config " + self.config)
+        self.cfg = self.cfg_json(SELF_ROOT)
+        self.name = self.cfg["project"]["name"]
+        if not self.name:
+            die("project.name is empty in the config")
+        self.state = os.path.expanduser(self.cfg["project"]["state_dir"])
+        self.kdir = os.path.join(self.state, "kourai")
+        self.version = str(self.cfg["install"]["version"])
+        self.repo0 = self.cfg["repos"][0]["path"]
+        self.user_settings = os.path.expanduser(a.user_settings or "~/.claude/settings.json")
+        self.project_settings = a.project_settings or os.path.join(self.repo0, ".claude", "settings.local.json")
+        self.claude = os.environ.get("KOURAI_CLAUDE_BIN", "claude")
+        self.record_path = os.path.join(self.kdir, "installed.json")
+        self.record = read_json(self.record_path, {})
+        self.market = "kourai-" + self.name
+
+    # --- config --------------------------------------------------------------------
+    def kc_env(self, root):
+        env = dict(os.environ, KOURAI_CONFIG=self.config, KOURAI_BIN=os.path.join(root, "bin"))
+        env["KOURAI_DEFAULTS"] = os.path.join(root, "config", "defaults.toml")
+        return env
+
+    def cfg_json(self, root):
+        r = run([os.path.join(root, "bin", "kourai-config"), "json"], env=self.kc_env(root), check=False)
+        if r.returncode != 0:
+            die("the config is invalid under %s:\n%s" % (root, (r.stdout + r.stderr).strip()), 1)
+        return json.loads(r.stdout)
+
+    def config_check(self, root):
+        r = run([os.path.join(root, "bin", "kourai-config"), "check"], env=self.kc_env(root), check=False)
+        return r.returncode, (r.stdout + r.stderr).strip()
+
+    # --- releases ------------------------------------------------------------------
+    def release_dir(self, version):
+        return os.path.join(self.kdir, "releases", version.replace(":", "-"))
+
+    def source(self):
+        return self.a.source or "https://github.com/%s.git" % self.cfg["install"]["source_repo"]
+
+    def fetch(self, version):
+        """Clone the tag (or sha) into a new release folder; verify it; return the folder."""
+        dest = self.release_dir(version)
+        if os.path.isdir(os.path.join(dest, ".git")) or os.path.isfile(os.path.join(dest, ".kourai-commit")):
+            return dest
+        pin = version.startswith("sha:")
+        ref = version[4:] if pin else TAG_FMT % version
+        tmp = dest + ".tmp"
+        shutil.rmtree(tmp, ignore_errors=True)
+        os.makedirs(os.path.dirname(dest), exist_ok=True)
+        run(["git", "clone", "-q", "--no-checkout", self.source(), tmp])
+        r = run(["git", "-C", tmp, "rev-parse", "--verify", ref + "^{commit}"], check=False)
+        if r.returncode != 0:
+            shutil.rmtree(tmp, ignore_errors=True)
+            die("the source has no %s %s" % ("commit" if pin else "tag", ref))
+        commit = r.stdout.strip()
+        if pin and not commit.startswith(ref):
+            die("sha pin does not resolve to itself")
+        run(["git", "-C", tmp, "checkout", "-q", "--detach", commit])
+        shutil.rmtree(os.path.join(tmp, ".git"))     # a release folder is a read-only copy, not a clone
+        with open(os.path.join(tmp, ".kourai-commit"), "w") as f:
+            f.write(commit + "\n")
+        os.rename(tmp, dest)
+        for dp, dns, fns in os.walk(dest):
+            for fn in fns:
+                os.chmod(os.path.join(dp, fn), os.stat(os.path.join(dp, fn)).st_mode & ~0o222)
+        return dest
+
+    def plugin_version(self, root):
+        return read_json(os.path.join(root, ".claude-plugin", "plugin.json"), {}).get("version", "")
+
+    # --- rendered outputs ----------------------------------------------------------
+    def bin_scripts(self, root):
+        out = []
+        for fn in sorted(os.listdir(os.path.join(root, "bin"))):
+            p = os.path.join(root, "bin", fn)
+            if os.path.isfile(p) and os.access(p, os.X_OK) and fn != "kourai-install":
+                out.append(fn)
+        return out
+
+    def render_template(self, root, name):
+        cfg = self.cfg_json(root)
+        text = read_text(os.path.join(root, "templates", name))
+        lines = []
+        for l in text.split("\n"):
+            if not l.strip() or l.startswith("# "):
+                continue
+            if l.strip() == "{bin_scripts}":
+                for s in self.bin_scripts(root):
+                    lines += ["Bash(%s *)" % s, "Bash(%s)" % s]
+                continue
+            def sub(m):
+                v = cfg
+                for part in m.group(1).split("."):
+                    v = v[int(part)] if isinstance(v, list) else v[part]
+                return str(v)
+            lines.append(re.sub(r"\{([a-z_.0-9]+)\}", sub, l))
+        return lines
+
+    def hooks_dest(self, version):
+        return os.path.join(os.path.expanduser(self.cfg["paths"]["hooks_dir"]), version)
+
+    def hook_command(self, version, fn):
+        d = self.hooks_dest(version)
+        f = os.path.join(d, fn)
+        return "[ ! -f '%s' ] || KOURAI_BIN='%s' KOURAI_CONFIG='%s' bash '%s'" % (f, os.path.join(d, "bin"), self.config, f)
+
+    def render_project_settings(self, root, version, cur):
+        """The project settings after the install: only the marked keys change."""
+        new = json.loads(json.dumps(cur))
+        owned = self.record.get(MARK, {}) if cur is not None else {}
+        # env
+        new.setdefault("env", {})["KOURAI_CONFIG"] = self.config
+        # permissions
+        allow = [x for x in new.setdefault("permissions", {}).get("allow", []) if x not in owned.get("allow", [])]
+        mine = self.render_template(root, "permissions.tmpl")
+        new["permissions"]["allow"] = allow + [x for x in mine if x not in allow]
+        # hooks
+        reg = read_json(os.path.join(root, "hooks", "registry.json"), {"event": "PreToolUse", "hooks": []})
+        ev = reg["event"]
+        groups = [g for g in new.setdefault("hooks", {}).get(ev, [])]
+        keep = []
+        for g in groups:
+            g["hooks"] = [h for h in g.get("hooks", []) if os.path.join(self.kdir, "hooks") not in h.get("command", "")
+                          and os.path.join(os.path.expanduser(self.cfg["paths"]["hooks_dir"])) not in h.get("command", "")]
+            if g["hooks"]:
+                keep.append(g)
+        for h in reg["hooks"]:
+            keep.append({"matcher": h["matcher"], "hooks": [{"type": "command", "command": self.hook_command(version, h["file"]),
+                                                            "timeout": h.get("timeout", 60), "onFailure": "block"}]})
+        new["hooks"][ev] = keep
+        # plugin enablement is written by `claude plugin install`; the installer records it
+        return new
+
+    def render_user_settings(self, root, cur):
+        new = json.loads(json.dumps(cur))
+        owned = self.record.get(MARK, {}).get("automode", [])
+        am = new.setdefault("autoMode", {})
+        allow = [x for x in am.get("allow", []) if x not in owned]
+        am["allow"] = allow + self.render_template(root, "automode.tmpl")
+        return new
+
+    def owned_now(self, root, project_new, user_new):
+        return {"allow": self.render_template(root, "permissions.tmpl"),
+                "automode": self.render_template(root, "automode.tmpl")}
+
+    # --- hooks copy ----------------------------------------------------------------
+    def copy_hooks(self, root, version, dest=None):
+        dest = dest or self.hooks_dest(version)
+        shutil.rmtree(dest, ignore_errors=True)
+        os.makedirs(dest)
+        reg = read_json(os.path.join(root, "hooks", "registry.json"), {"hooks": [], "helpers": []})
+        for fn in [h["file"] for h in reg["hooks"]] + reg.get("helpers", []):
+            shutil.copy2(os.path.join(root, "hooks", fn), os.path.join(dest, fn))
+        shutil.copytree(os.path.join(root, "bin"), os.path.join(dest, "bin"), ignore=shutil.ignore_patterns("__pycache__"))
+        os.makedirs(os.path.join(dest, "config"))
+        shutil.copy2(os.path.join(root, "config", "defaults.toml"), os.path.join(dest, "config", "defaults.toml"))
+        sums = tree_hashes(dest)
+        sums.pop("SHA256SUMS", None)
+        with open(os.path.join(dest, "SHA256SUMS"), "w") as f:
+            for k in sorted(sums):
+                f.write("%s  %s\n" % (sums[k], k))
+        return sums
+
+    def hook_drift(self, version):
+        d = self.hooks_dest(version)
+        sums_file = os.path.join(d, "SHA256SUMS")
+        if not os.path.isfile(sums_file):
+            return ["no SHA256SUMS in " + d]
+        bad = []
+        want = {}
+        for l in read_text(sums_file).splitlines():
+            h, _, p = l.partition("  ")
+            want[p] = h
+        have = tree_hashes(d)
+        have.pop("SHA256SUMS", None)
+        for p in sorted(set(want) | set(have)):
+            if want.get(p) != have.get(p):
+                bad.append("%s (%s)" % (p, "missing" if p not in have else "extra" if p not in want else "changed"))
+        return bad
+
+    # --- agents running ------------------------------------------------------------
+    def running_agents(self, root):
+        cmd = os.environ.get("KOURAI_INSTALL_AGENT_CHECK")
+        r = run(cmd.split() if cmd else [os.path.join(root, "bin", "agent-state.sh")], env=self.kc_env(root), check=False)
+        live = ("current", "running", "waiting", "unknown")
+        return [l for l in r.stdout.splitlines() if l.split(" ")[0] in live]
+
+    # --- marketplace + plugin through the claude CLI -------------------------------
+    def claude_env(self):
+        return dict(os.environ)
+
+    def claude_plugin(self, args, check=True):
+        if self.a.skip_claude:
+            return None
+        r = run([self.claude, "plugin"] + args, cwd=self.repo0, env=self.claude_env(), check=check)
+        if os.environ.get("KOURAI_INSTALL_DEBUG"):
+            print("claude plugin %s -> %d %s" % (" ".join(args), r.returncode, (r.stdout + r.stderr).strip()[:300]), file=sys.stderr)
+        return r
+
+    def write_marketplace(self, version, plugin_version):
+        mk = {"name": self.market, "owner": {"name": "kourai installation of " + self.name},
+              "plugins": [{"name": "kourai", "source": "./releases/" + self.release_dir(version).split("/releases/")[1],
+                           "description": "kourai %s" % plugin_version, "version": plugin_version}]}
+        write_json(os.path.join(self.kdir, ".claude-plugin", "marketplace.json"), mk)
+
+    def activate_plugin(self):
+        r = self.claude_plugin(["marketplace", "add", self.kdir, "--scope", "local"], check=False)
+        if r is not None and r.returncode != 0 and "already" not in (r.stdout + r.stderr).lower():
+            die("claude plugin marketplace add failed: " + (r.stdout + r.stderr).strip()[:400])
+        self.claude_plugin(["marketplace", "update", self.market])
+        inst = self.claude_plugin(["install", "kourai@" + self.market, "--scope", "local"], check=False)
+        if inst is not None and inst.returncode != 0:
+            self.claude_plugin(["update", "kourai@" + self.market, "--scope", "local"])
+
+
+# --- commands -------------------------------------------------------------------------
+
+def cmd_plan(i):
+    if i.version.startswith("sha:") and not re.fullmatch(r"sha:[0-9a-f]{40}", i.version):
+        die("a sha pin is sha:<40 hex digits>")
+    old = i.record.get("version")
+    root = i.fetch(i.version)
+    rc, out = i.config_check(root)
+    if rc != 0:
+        print("The config is invalid under %s:\n%s" % (i.version, out), file=sys.stderr)
+        return 1
+    plugin_version = i.plugin_version(root)
+    cur_p = read_json(i.project_settings, {})
+    cur_u = read_json(i.user_settings, {})
+    new_p = i.render_project_settings(root, i.version, cur_p)
+    new_u = i.render_user_settings(root, cur_u)
+    unchanged = (new_p == cur_p and new_u == cur_u and old == i.version and not i.hook_drift(i.version))
+    if unchanged:
+        shutil.rmtree(os.path.join(i.kdir, "staged", i.version.replace(":", "-")), ignore_errors=True)
+        print("Nothing to change: %s is installed." % i.version)
+        return 0
+    stage = os.path.join(i.kdir, "staged", i.version.replace(":", "-"))
+    shutil.rmtree(stage, ignore_errors=True)
+    os.makedirs(stage)
+    write_json(os.path.join(stage, "project-settings.json"), new_p)
+    write_json(os.path.join(stage, "user-settings.json"), new_u)
+    # staged hooks (the copy apply will make) for the hash table
+    new_sums = i.copy_hooks(root, i.version, os.path.join(stage, "hooks"))
+    old_sums = {}
+    if old:
+        for l in read_text(os.path.join(i.hooks_dest(old), "SHA256SUMS")).splitlines():
+            h, _, p = l.partition("  ")
+            old_sums[p] = h
+    lines = ["# kourai plan: %s to %s" % (old or "(none)", i.version), ""]
+    lines += ["Plugin version in the release: %s" % plugin_version, ""]
+    lines += ["## 1. Changelog", ""]
+    lines += [read_text(os.path.join(root, "CHANGELOG.md")).strip()[:6000] or "(none)", ""]
+    lines += ["## 2. Plugin diff", ""]
+    if old and os.path.isdir(i.release_dir(old)):
+        a, b = tree_hashes(i.release_dir(old)), tree_hashes(root)
+        for p in sorted(set(a) | set(b)):
+            if a.get(p) != b.get(p):
+                lines.append("- %s %s" % ("added" if p not in a else "removed" if p not in b else "changed", p))
+        for sub in ("hooks", "installer"):
+            r = run(["diff", "-ru", os.path.join(i.release_dir(old), sub), os.path.join(root, sub)], check=False)
+            if r.stdout:
+                lines += ["", "```diff", r.stdout.rstrip(), "```"]
+    else:
+        lines.append("First install: %d files." % len(tree_hashes(root)))
+    lines += ["", "## 3. Settings diff", ""]
+    for label, cur, new, path in (("project settings", cur_p, new_p, i.project_settings), ("user settings", cur_u, new_u, i.user_settings)):
+        d = "".join(difflib.unified_diff(json.dumps(cur, indent=2, sort_keys=True).splitlines(True),
+                                         json.dumps(new, indent=2, sort_keys=True).splitlines(True), "current " + path, "planned " + path))
+        lines += ["%s:" % label, "```diff", d.rstrip() or "(no change)", "```", ""]
+    lines += ["## 4. Gate changes", ""]
+    for p in sorted(set(old_sums) | set(new_sums)):
+        if old_sums.get(p) != new_sums.get(p):
+            lines.append("- %s: %s -> %s" % (p, (old_sums.get(p) or "(none)")[:12], (new_sums.get(p) or "(none)")[:12]))
+    lines += ["", "## 5. Config against the new defaults", "", "```", out, "```", ""]
+    over = []
+    agents_dir = os.path.join(i.repo0, ".claude", "agents")
+    if os.path.isdir(agents_dir):
+        over = [f for f in sorted(os.listdir(agents_dir)) if os.path.isfile(os.path.join(root, "agents", f))]
+    lines += ["## 6. Project agents that override plugin agents", ""] + (["- " + f for f in over] or ["(none)"]) + [""]
+    plans = os.path.join(i.kdir, "plans")
+    os.makedirs(plans, exist_ok=True)
+    plan_file = os.path.join(plans, "%s-to-%s.md" % ((old or "none"), i.version.replace(":", "-")))
+    with open(plan_file, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    inputs = {"config": sha(i.config), "project_settings": sha(i.project_settings) if os.path.exists(i.project_settings) else None,
+              "user_settings": sha(i.user_settings) if os.path.exists(i.user_settings) else None,
+              "release": tree_hashes(root), "record": sha(i.record_path) if os.path.exists(i.record_path) else None}
+    write_json(os.path.join(stage, "plan.json"), {"version": i.version, "from": old, "inputs": inputs, "plan_file": plan_file})
+    print("Plan written: " + plan_file)
+    return 10
+
+
+def backup(i, files):
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    d = os.path.join(i.kdir, "backups", ts)
+    n = 0
+    while os.path.exists(d):
+        n += 1
+        d = os.path.join(i.kdir, "backups", "%s-%d" % (ts, n))
+    os.makedirs(d)
+    man = {}
+    for k, p in enumerate(files):
+        if os.path.exists(p):
+            shutil.copy2(p, os.path.join(d, "f%d" % k))
+            man[p] = "f%d" % k
+        else:
+            man[p] = None
+    write_json(os.path.join(d, "manifest.json"), man)
+    return d
+
+
+def cmd_apply(i):
+    if i.version.startswith("sha:"):
+        die("apply refuses a sha pin; use a released version (a tag %s)" % (TAG_FMT % "<version>"))
+    stage = os.path.join(i.kdir, "staged", i.version)
+    plan = read_json(os.path.join(stage, "plan.json"), None)
+    if not plan or plan["version"] != i.version:
+        die("no plan for %s; run plan first" % i.version)
+    root = i.release_dir(i.version)
+    if not os.path.isdir(root):
+        die("release folder %s is missing; run plan again" % root)
+    inp = plan["inputs"]
+    cur = {"config": sha(i.config), "project_settings": sha(i.project_settings) if os.path.exists(i.project_settings) else None,
+           "user_settings": sha(i.user_settings) if os.path.exists(i.user_settings) else None,
+           "release": tree_hashes(root), "record": sha(i.record_path) if os.path.exists(i.record_path) else None}
+    for k in inp:
+        if inp[k] != cur[k]:
+            die("%s changed since plan; run plan again" % k)
+    live = i.running_agents(root)
+    if live:
+        die("agents are running; apply lands between batches:\n" + "\n".join(live[:5]))
+    old = i.record.get("version")
+    files = [i.config, i.project_settings, i.user_settings, i.record_path,
+             os.path.join(i.kdir, ".claude-plugin", "marketplace.json")]
+    bdir = backup(i, files)
+    cur_p, cur_u = read_json(i.project_settings, {}), read_json(i.user_settings, {})
+    i.copy_hooks(root, i.version)
+    plugin_version = i.plugin_version(root)
+    i.write_marketplace(i.version, plugin_version)
+    new_p = read_json(os.path.join(stage, "project-settings.json"), None)
+    new_u = read_json(os.path.join(stage, "user-settings.json"), None)
+    write_json(i.project_settings, new_p)
+    write_json(i.user_settings, new_u)
+    i.activate_plugin()
+    rec = {"version": i.version, "previous": old, "plugin_version": plugin_version, "backup": bdir,
+           "applied": datetime.datetime.now(datetime.timezone.utc).isoformat(), "config_sha": sha(i.config),
+           "hooks": tree_hashes(i.hooks_dest(i.version)),
+           MARK: i.owned_now(root, new_p, new_u)}
+    write_json(i.record_path, rec)
+    with open(os.path.join(i.kdir, "history.log"), "a") as f:
+        f.write("%s apply %s -> %s backup %s\n" % (rec["applied"], old or "(none)", i.version, bdir))
+    print("Applied %s (backup %s). Start /kourai:run-board in a new session, or run /reload-plugins." % (i.version, bdir))
+    return 0
+
+
+def cmd_rollback(i):
+    bk = os.path.join(i.kdir, "backups")
+    dirs = sorted(os.listdir(bk)) if os.path.isdir(bk) else []
+    if not dirs:
+        die("no backup to roll back to")
+    d = os.path.join(bk, dirs[-1])
+    man = read_json(os.path.join(d, "manifest.json"), {})
+    rec = i.record
+    if rec.get("config_sha") and os.path.exists(i.config) and sha(i.config) != rec["config_sha"]:
+        old_cfg = os.path.join(d, man[i.config]) if man.get(i.config) else None
+        if old_cfg:
+            print("".join(difflib.unified_diff(read_text(i.config).splitlines(True), read_text(old_cfg).splitlines(True), "current", "backup")))
+        if not i.a.yes:
+            if input("The config changed since the apply. Overwrite it with the backup? [y/N] ").strip().lower() != "y":
+                die("rollback cancelled")
+    for p, b in man.items():
+        if b is None:
+            if os.path.exists(p):
+                os.remove(p)
+        else:
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            shutil.copy2(os.path.join(d, b), p)
+    prev = rec.get("previous")
+    i.record = read_json(i.record_path, {})
+    if prev:
+        i.version = prev
+        i.write_marketplace(prev, i.plugin_version(i.release_dir(prev)))
+        i.activate_plugin()
+    else:
+        i.claude_plugin(["uninstall", "kourai@" + i.market, "--scope", "local"], check=False)
+    shutil.rmtree(d)
+    ts = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    with open(os.path.join(i.kdir, "history.log"), "a") as f:
+        f.write("%s rollback to %s\n" % (ts, prev or "(none)"))
+    print("Rolled back to %s. Start /kourai:run-board in a new session." % (prev or "no install"))
+    return 0
+
+
+def cmd_check(i):
+    problems = []
+    if i.version.startswith("sha:"):
+        die("check refuses a sha pin; use a released version")
+    if i.record.get("version") != i.version:
+        problems.append("config says %s, installed is %s" % (i.version, i.record.get("version")))
+    root = i.release_dir(i.version)
+    if not os.path.isdir(root):
+        problems.append("release folder %s is missing" % root)
+    else:
+        rc, out = i.config_check(root)
+        if rc != 0:
+            problems.append("config invalid: " + out.replace("\n", " | ")[:300])
+        r = run(["git", "ls-remote", i.source(), "refs/tags/" + TAG_FMT % i.version], check=False)
+        commit = read_text(os.path.join(root, ".kourai-commit")).strip()
+        if r.returncode == 0 and r.stdout.strip() and commit and commit not in r.stdout:
+            tag_commit_r = run(["git", "ls-remote", i.source(), "refs/tags/%s^{}" % (TAG_FMT % i.version)], check=False)
+            if commit not in tag_commit_r.stdout:
+                problems.append("release folder is at %s, not the tag" % commit[:12])
+        have = tree_hashes(root)
+        for p in sorted(have):
+            if p == ".kourai-commit":
+                continue
+        if not os.path.isfile(os.path.join(root, ".kourai-commit")):
+            problems.append("release folder has no .kourai-commit")
+    for b in i.hook_drift(i.version):
+        problems.append("GATE DRIFT: " + b)
+    cur_p = read_json(i.project_settings, {})
+    owned = i.record.get(MARK, {})
+    for a in owned.get("allow", []):
+        if a not in cur_p.get("permissions", {}).get("allow", []):
+            problems.append("settings drift: allow line removed by hand: " + a)
+    cmds = json.dumps(cur_p.get("hooks", {}))
+    reg = read_json(os.path.join(root, "hooks", "registry.json"), {"hooks": []}) if os.path.isdir(root) else {"hooks": []}
+    for h in reg["hooks"]:
+        if i.hook_command(i.version, h["file"]).replace("\\", "\\\\").replace('"', '\\"') not in cmds:
+            problems.append("settings drift: hook %s is not registered as installed" % h["file"])
+    if cur_p.get("env", {}).get("KOURAI_CONFIG") != i.config:
+        problems.append("settings drift: env.KOURAI_CONFIG")
+    for p in problems:
+        print("CHECK FAIL: " + p)
+    if problems:
+        return 1
+    print("CHECK OK: %s installed, gates match their hashes" % i.version)
+    return 0
+
+
+def cmd_prove(i):
+    rc = cmd_check(i)
+    if rc:
+        return rc
+    d = i.hooks_dest(i.version)
+    reg = read_json(os.path.join(i.release_dir(i.version), "hooks", "registry.json"), {"hooks": []})
+    bad = 0
+    # each registered gate runs once on a harmless call: it must start and let it through (exit 0)
+    for h in reg["hooks"]:
+        payload = json.dumps({"tool_name": h["matcher"], "tool_input": {"command": "true"}})
+        env = dict(os.environ, KOURAI_BIN=os.path.join(d, "bin"), KOURAI_CONFIG=i.config)
+        r = run(["bash", os.path.join(d, h["file"])], env=env, check=False, input=payload)
+        ok = r.returncode == 0
+        print("%s %s: exit %d" % ("PROVE OK  " if ok else "PROVE FAIL", h["file"], r.returncode))
+        bad += 0 if ok else 1
+    for s in i.record.get(MARK, {}).get("allow", []):
+        m = re.fullmatch(r"Bash\(([A-Za-z0-9_.-]+)\)", s)
+        if m:
+            env = dict(os.environ, PATH=os.path.join(i.release_dir(i.version), "bin") + os.pathsep + os.environ.get("PATH", ""))
+            r = run(["bash", "-c", "command -v " + m.group(1)], env=env, check=False)
+            if r.returncode != 0:
+                print("PROVE FAIL %s: not found on the plugin's bin/ PATH" % m.group(1))
+                bad += 1
+    print("The auto-mode rules are proved only by running the board attended (docs/SWITCH-OVER.md).")
+    return 1 if bad else 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("command", choices=["plan", "apply", "rollback", "check", "prove"])
+    ap.add_argument("--config"); ap.add_argument("--user-settings"); ap.add_argument("--project-settings")
+    ap.add_argument("--source"); ap.add_argument("--yes", action="store_true"); ap.add_argument("--skip-claude", action="store_true")
+    a = ap.parse_args()
+    i = Inst(a)
+    sys.exit({"plan": cmd_plan, "apply": cmd_apply, "rollback": cmd_rollback, "check": cmd_check, "prove": cmd_prove}[a.command](i))
+
+
+if __name__ == "__main__":
+    main()

@@ -43,3 +43,20 @@ finish() {
   echo "$(basename "$0"): $PASSES passed, $FAILS failed"
   [ "$FAILS" -eq 0 ]
 }
+
+# guard_claude_config: an installer test runs `claude plugin ...` only against a scratch
+# CLAUDE_CONFIG_DIR, never the live ~/.claude. Call it before any such command.
+guard_claude_config() {
+  case "${CLAUDE_CONFIG_DIR:-}" in
+    "") echo "SETUP FAILED: CLAUDE_CONFIG_DIR is unset" >&2; exit 2 ;;
+    "$HOME/.claude"|"$HOME/.claude/"*) echo "SETUP FAILED: CLAUDE_CONFIG_DIR is the live ~/.claude" >&2; exit 2 ;;
+  esac
+}
+
+# guard_path <path>: refuse any path under the live ~/.claude or the live runner_city checkout.
+guard_path() {
+  case "$1" in
+    "$HOME/.claude"|"$HOME/.claude/"*|/Users/shawn/Development/github/runner_city|/Users/shawn/Development/github/runner_city/*)
+      echo "SETUP FAILED: test path $1 is live" >&2; exit 2 ;;
+  esac
+}

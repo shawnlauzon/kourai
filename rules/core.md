@@ -2,6 +2,34 @@
 
 The rules are two files: this one, the core rules (`${CLAUDE_PLUGIN_ROOT}/rules/core.md`, shipped with kourai), and the project rules (`kourai-config get project.rules_file`: the **Project settings**, **Tests**, **Test servers** and **Releasing** parts, and anything the project adds). "rules.md" in an agent file or a rule means the two together. Every board agent reads the parts its own agent file lists (by section name: `[core: First to Last]` or `[project: Heading]` is read with one heading lookup and one Read, as each agent file says; `rules-ranges.sh check` keeps the names true), before the rest of its agent file; the board watcher, promoter, workflow builder and workflow verifier read both files whole. It holds what more than one role needs. Your agent file holds what only your role does. `.claude/board/WORKFLOW.md` is the overview. The user's decisions are one file each in `.claude/board/decisions/` (from 2026-10-18 on). Agents read them with Grep and Read (`.claude/board/decisions/*.md`, one small file each); `decisions-index.sh`, which prints them all in date order, is for the main session; `.claude/board/decisions-log.md` holds the earlier ones (closed history). When it, this file and the agent files disagree, that is drift: the workflow verifier reports it. The project's workflow Claude Doc is a kept-current description that follows the repo: where it disagrees with this file, the agent files or `WORKFLOW.md`, the repo wins, and the main session updates the doc after each workflow PR merges.
 
+## Placeholders
+
+A name in angle brackets in these rules, the agents and the commands is either a fill-in (a card, a number, a reason: you supply it) or one of the installation's settings below. Nothing substitutes the settings for you: read each with `kourai-config get <key>` (`kourai-config path --plugin-root` prints the plugin folder).
+
+| Placeholder | `kourai-config get` key | Meaning |
+|---|---|---|
+| `<app-checkout>` | `repos.0.path` | main checkout of the first repo (the app) |
+| `<server-checkout>` | `repos.1.path` | main checkout of the second repo (the server) |
+| `<app-repo>` | `repos.0.slug` | `owner/name` of the first repo |
+| `<server-repo>` | `repos.1.slug` | `owner/name` of the second repo |
+| `<app-repo-old-name>` | `repos.0.legacy_slugs` | older slugs of the first repo |
+| `<state_dir>` | `project.state_dir` | state, logs, locks and secrets folder (outside git) |
+| `<hooks_dir>` | `paths.hooks_dir` | installed gates, one folder per version |
+| `<transcripts_dir>` | `project.transcripts_dir` | Claude Code transcript folder (`auto` = derived from the first repo's path) |
+| `<board-id>` | `board.id` | Trello board id |
+| `<workspace-id>` | `board.workspace_id` | Trello workspace id |
+| `<active-label-id>` | `board.labels.active` | Actively worked label |
+| `<blocked-label-id>` | `board.labels.blocked` | Blocked label |
+| `<no-action-label-id>` | `board.labels.no_action` | No action required label |
+| `<waiting-label-id>` | `board.labels.waiting_resource` | Waiting on a resource label |
+| `<conflict-label-id>` | `board.labels.conflict` | conflict (orange) label |
+| `<attended-label-id>` | `board.labels.attended` | attended edit (yellow) label |
+| `<user-member-id>` | `board.members.user` | the user's Trello account |
+| `<internal-member-id>` | `board.members.internal` | other internal accounts (a list) |
+| `<agent-member-id>` | `board.members.agent` | the agents' Trello account |
+| `<bot-name>` | `github.bot_name` | the GitHub app the agents write as (`<bot-name>[bot]`) |
+
+
 ## Settings
 
 See the project rules.

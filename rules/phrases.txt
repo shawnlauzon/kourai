@@ -1,0 +1,120 @@
+# The comment phrases that a hook, a gate or board-wait.py parses, or that several agent files must keep
+# using. One line per phrase: <phrase> | <files that must contain it>, paths from the kourai root,
+# comma-separated. A file written `project:<path>` lives in the project layer (the project's own agents,
+# scripts and rules), not in kourai: tests/test-phrases.sh checks only the kourai files, and the project's
+# own check (its workflow-checks run) covers the `project:` ones. Carried from runner_city main 22fe69b5.
+VERIFIED: | hooks/merge-gate.sh, bin/board-wait.py, agents/merger.md, agents/board-watcher.md, rules/core.md
+VERIFY FAILED: | hooks/merge-gate.sh, agents/merger.md, bin/board-wait.py, agents/board-watcher.md, agents/workflow-verifier.md, rules/core.md
+VERIFY SELF: | bin/board-wait.py, agents/board-watcher.md, agents/workflow-verifier.md, rules/core.md
+AWAITING VERIFIED: | bin/board-wait.py, agents/board-watcher.md, agents/workflow-builder.md, rules/core.md
+PLAN AGREED: | bin/board-wait.py, agents/board-watcher.md, agents/workflow-verifier.md, agents/workflow-builder.md, rules/core.md
+PLAN CHANGES: | bin/board-wait.py, agents/board-watcher.md, agents/workflow-verifier.md, agents/workflow-builder.md, rules/core.md
+PLAN READY: | bin/board-wait.py, agents/board-watcher.md, agents/workflow-builder.md, rules/core.md
+VERIFY PLAN: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+WORKFLOW DONE: | agents/board-watcher.md, agents/workflow-builder.md, rules/core.md
+WORKFLOW WORK: | agents/board-watcher.md, agents/workflow-builder.md, rules/core.md
+FULL SUITE GREEN: | hooks/staging-gate.sh, project:agents/promoter.md, rules/core.md
+GREEN*: | hooks/staging-gate.sh, project:agents/promoter.md, rules/core.md
+MERGED: | hooks/merged-comment-gate.sh, bin/board-wait.py, agents/merger.md, rules/core.md
+MERGE READY: | bin/board-wait.py, agents/board-watcher.md, agents/merger.md, rules/core.md
+WAITS FOR: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+UNBLOCKED: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+BLOCKED: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+NEXT FOR YOU: | bin/board-wait.py, agents/card-manager.md, rules/core.md
+READY FOR YOU: | bin/board-wait.py, agents/card-manager.md, rules/core.md
+USER REPLY: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+CHANGES REQUESTED: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+CHECK FAILED: | bin/board-wait.py, agents/merger.md, rules/core.md
+REVERTED: | bin/board-wait.py, agents/merger.md, rules/core.md
+REFRESH NEEDED: | bin/board-wait.py, agents/merger.md, rules/core.md
+REFRESHED: | bin/board-wait.py, agents/workflow-builder.md, rules/core.md, hooks/merge-gate.sh, agents/merger.md
+CONFLICT RESOLVED: | bin/board-wait.py, agents/workflow-builder.md, rules/core.md, hooks/merge-gate.sh, agents/merger.md
+MERGE CONFLICT: | bin/board-wait.py, agents/merger.md, rules/core.md
+INCLUDED IN: | bin/board-wait.py, agents/merger.md, rules/core.md
+ATTENDED EDIT NEEDED: | bin/board-wait.py, agents/workflow-builder.md, rules/core.md
+STAGING DEPLOYED: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+HOOK DELETE: | agents/board-watcher.md, agents/workflow-builder.md, rules/core.md
+PLAN: | bin/board-wait.py, agents/board-watcher.md, agents/workflow-builder.md, agents/workflow-verifier.md, rules/core.md
+REVERT: | bin/board-wait.py, agents/card-manager.md, rules/core.md
+DEPENDS ON: | bin/board-wait.py, agents/board-watcher.md, agents/merger.md, rules/core.md
+WITH: | bin/board-wait.py, agents/merger.md, rules/core.md
+FULL SUITE FAILED: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+STAGING DEPLOY FAILED: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+ANDROID BUILD FAILED: | bin/board-wait.py, project:agents/android-builder.md, project:agents/promoter.md, rules/core.md
+IOS BUILD FAILED: | bin/board-wait.py, project:agents/ios-builder.md, project:agents/promoter.md, rules/core.md
+ANDROID UPLOADED: | bin/board-wait.py, project:agents/android-builder.md, project:agents/promoter.md, rules/core.md
+IOS UPLOADED: | bin/board-wait.py, project:agents/ios-builder.md, project:agents/promoter.md, rules/core.md
+no behavior change | hooks/merge-gate.sh, bin/board-wait.py, agents/workflow-builder.md, agents/merger.md, rules/core.md
+NOT CARRIED: | bin/board-wait.py, agents/merger.md, rules/core.md, hooks/merge-gate.sh
+LEFTOVER TAKEN DOWN: | agents/card-manager.md, project:board/rules.md
+DISK LOW: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+DISK REMOVE: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+DISK CRITICAL: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+DISK OK: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+DISK ACTION: | agents/board-watcher.md, commands/run-board.md, rules/core.md
+DISK HOLD: | agents/board-watcher.md, project:bin/card-test-server.sh, rules/core.md
+NO DISK HOLD | agents/board-watcher.md, project:bin/card-test-server.sh, rules/core.md
+RELEASE FIX: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+RELEASE FIX READY: | bin/board-wait.py, agents/board-watcher.md, project:agents/promoter.md, rules/core.md
+RELEASE FIX WAITS: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+RELEASE FIX VOID: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+RELEASE SEARCH ENDED: | bin/board-wait.py, project:agents/promoter.md, rules/core.md
+RESUME: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+RELEASE BLOCKER: | bin/board-wait.py, project:agents/promoter.md, agents/board-watcher.md, rules/core.md
+URGENT ADDED: | bin/board-wait.py, agents/board-watcher.md, project:agents/promoter.md, rules/core.md
+NOT URGENT: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+HOLD ENDED: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+HOLDS KNOWN: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+HOLDS UNKNOWN | bin/board-wait.py, agents/board-watcher.md, project:agents/promoter.md, rules/core.md
+NOT ITS TURN: | agents/card-manager.md, agents/workflow-builder.md, agents/board-watcher.md, rules/core.md
+NOT TOP: | commands/run-board.md, agents/board-watcher.md, rules/core.md
+the user requested changes on GitHub, nothing has picked it up | bin/board-wait.py, agents/board-watcher.md, tests/test-board-wait.sh
+every PR passes the review policy (approved on GitHub or no review needed), nothing has picked it up | bin/board-wait.py, agents/board-watcher.md, tests/test-board-wait.sh
+TEST HANDED BACK: | agents/card-manager.md, rules/core.md
+BUILDER TRIAL: | agents/card-manager.md, rules/core.md
+BUILDER TRIAL FAULT: | agents/card-manager.md, rules/core.md
+BUILDER TRIAL REVIEW: | agents/card-manager.md, rules/core.md, agents/token-auditor.md
+EMULATOR RESTART: | agents/card-manager.md, rules/core.md
+ui time limit twice: | project:agents/feature-tester.md, agents/card-manager.md
+test change needed: | project:agents/feature-tester.md, agents/card-manager.md
+test changed: | project:agents/feature-tester.md, agents/card-manager.md
+Runner: change no test; hand back. | agents/card-manager.md, project:agents/feature-tester.md
+Change the test of card | agents/card-manager.md, project:agents/feature-tester.md
+Notifications: | rules/core.md, project:agents/feature-tester.md, agents/card-manager.md, agents/code-reviewer.md
+Offline because: | rules/core.md, project:agents/feature-tester.md, agents/card-manager.md
+BEFORE FIXED: | rules/core.md, agents/card-manager.md, project:agents/feature-tester.md
+ANSWERED: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+merge-gate: SCREENSHOTS IN GIT: | hooks/merge-gate.sh, agents/merger.md, rules/core.md
+merge-gate: CANNOT LIST FILES: | hooks/merge-gate.sh, agents/merger.md
+screenshots in git: | agents/merger.md, agents/card-manager.md, rules/core.md, project:agents/feature-tester.md
+VERIFY READY: | project:agents/promoter.md, rules/core.md
+NOT VERIFIED: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+CI: STUCK | bin/ci-wait.sh, agents/merger.md, project:agents/mobile-builder.md, project:agents/server-builder.md, agents/card-manager.md, rules/core.md
+WAIT OVER: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+CHECK WAIT?: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+CI QUEUED STUCK: | bin/board-wait.py, project:board/rules.md
+SERVER LOST: | project:bin/server-probe.sh, bin/board-wait.py, agents/board-watcher.md, agents/card-manager.md, rules/core.md
+SERVER RECOVERED: | agents/card-manager.md, agents/board-watcher.md, rules/core.md
+MAIN CHECKOUT: | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+STUCK: main checkout | bin/board-wait.py, agents/board-watcher.md, rules/core.md
+Main checkout: hold | bin/board-wait.py, agents/workflow-builder.md, rules/core.md
+SENTRY RESOLVED: | agents/sentry-triager.md, project:agents/promoter.md, rules/core.md
+SENTRY CATCH-UP: | agents/sentry-triager.md, rules/core.md
+CANNOT REPRODUCE: | project:agents/feature-tester.md, agents/card-manager.md, agents/board-watcher.md, rules/core.md
+REPRODUCED: | agents/card-manager.md, agents/board-watcher.md, rules/core.md
+Symptom: | project:agents/feature-tester.md, agents/card-manager.md, agents/code-reviewer.md, rules/core.md
+FULL SUITE HELD: | project:agents/promoter.md, rules/core.md, bin/board-wait.py
+RETRYING: | rules/core.md, project:agents/ios-builder.md, project:agents/android-builder.md, agents/card-manager.md
+RETRIED: | rules/core.md, project:agents/ios-builder.md, project:agents/android-builder.md
+RESTARTED: | rules/core.md, agents/board-watcher.md, agents/card-manager.md
+merge-gate: NO PR CARD | hooks/merge-gate.sh, agents/merger.md
+merge-gate: TIMED OUT: | hooks/merge-gate.sh, agents/merger.md
+merge-gate: TRANSIENT: | hooks/merge-gate.sh, agents/merger.md
+merge-gate: CRASHED: | hooks/merge-gate.sh, agents/merger.md
+merged-comment-gate: TIMED OUT: | hooks/merged-comment-gate.sh, agents/merger.md
+merged-comment-gate: TRANSIENT: | hooks/merged-comment-gate.sh, agents/merger.md
+merged-comment-gate: CRASHED: | hooks/merged-comment-gate.sh, agents/merger.md
+staging-gate: NO FULL-TEST COMMENT IN WINDOW: | hooks/staging-gate.sh, project:agents/promoter.md
+staging-gate: TIMED OUT: | hooks/staging-gate.sh, project:agents/promoter.md
+staging-gate: TRANSIENT: | hooks/staging-gate.sh, project:agents/promoter.md
+staging-gate: CRASHED: | hooks/staging-gate.sh, project:agents/promoter.md

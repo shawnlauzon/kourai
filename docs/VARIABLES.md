@@ -1,8 +1,9 @@
 # Workflow variables: the inventory
 
 Every value in RunnerCity's workflow that another project may want to change,
-with its value today, where it is hard-coded, and the config key that
-replaces it. Read from runner_city mobile main `913585a3` (2026-10-17) plus
+with its value, where it was hard-coded when the inventory was taken (the
+"Where today" column; line numbers are RunnerCity's files at that baseline,
+not kourai's), and the config key that replaces it. Read from runner_city mobile main `913585a3` (2026-10-17) plus
 the four live hooks on disk (marked "live"); paths are relative to
 `runner_city/.claude/`. R = `board/rules.md`, W = `board/WORKFLOW.md`.
 
@@ -15,7 +16,7 @@ default and are required.
 
 | Key | Default | RunnerCity | Where today | What it does |
 |---|---|---|---|---|
-| `install.version` | `0.1.0` | n/a | new | kourai version the installation runs (tag `kourai--v<version>`) |
+| `install.version` | `0.1.0-rc1` | n/a | new | kourai version the installation runs (tag `kourai--v<version>`) |
 | `install.source_repo` | `shawnlauzon/kourai` | n/a | new | Where releases come from |
 
 ## Project and paths
@@ -25,7 +26,7 @@ default and are required.
 | `project.name` | required | `runnercity` | prose everywhere ("RunnerCity Development board") | Messages, card names |
 | `project.state_dir` | `~/Development/{project.name}_files` | `~/Development/runner_city_files` | 83 hits in 36 files; `bin/board-wait.py:109`, `bin/pause-lib.sh:12`, `bin/heartbeat.sh:13`, every hook | State, logs, locks, secrets |
 | `project.transcripts_dir` | `auto` | `~/.claude/projects/-Users-shawn-Development-github-runner-city` | `bin/agent-state.sh:83,99`, `agents/token-auditor.md:12`, `agents/workflow-verifier.md:25` (env `AGENT_TRANSCRIPTS_DIR`) | Liveness and token audit read transcripts here |
-| `project.rules_file` | `""` | `.claude/board/rules.md` (until the P4 split) | `bin/rules-ranges.sh:24` (env `RULES_FILE`) | The project part of the rules |
+| `project.rules_file` | `""` | `.claude/board/rules.md` | `bin/rules-ranges.sh:24` (env `RULES_FILE`) | The project part of the rules |
 | `paths.trello_env` | `{project.state_dir}/trello.env` | same | every hook; `bin/release-gap.sh:22`, `card-summary.sh:32`, `pr-ready.sh:21`, `board-snapshot.sh:38`, `agents-status.sh:52`, `board-wait.py:171`, `board-watch.sh:10` (env `TRELLO_ENV_FILE` in bin only) | Trello key and token |
 | `paths.locks_dir` | `{project.state_dir}/locks` | same | `bin/dev-merge-lock.sh:32`, `bin/run-locked.sh:31` (env `RC_LOCK_DIR`) | Named locks |
 | `paths.pause_dir` | `{project.state_dir}/pause` | same | `bin/pause-lib.sh:12` (env `RC_PAUSE_DIR`) | Per-card pause files |
@@ -43,19 +44,19 @@ default and are required.
 | Key | Default | RunnerCity | Where today | What it does |
 |---|---|---|---|---|
 | `board.provider` | `trello` | same | implied everywhere | Tracker |
-| `board.id` | required | `7Tch9xIX` | R27; `bin/board-wait.py:111`, `board-snapshot.sh:40`, `release-gap.sh:24`, `board-watch.sh:17`; hooks `merge-gate.sh:24` (live :38), `staging-gate.sh:22` (live :27) | The board |
+| `board.id` | required | `<board-id>` | R27; `bin/board-wait.py:111`, `board-snapshot.sh:40`, `release-gap.sh:24`, `board-watch.sh:17`; hooks `merge-gate.sh:24` (live :38), `staging-gate.sh:22` (live :27) | The board |
 | `board.name` | `""` | `RunnerCity Development` | R1, `commands/run-board.md:2`, `agents/board-watcher.md:3` | Prose name |
-| `board.label_prefix` | `""` | `ari:cloud:trello::label/workspace/699f1337f6b2c09dad36f42c/` | R78 | Label ids for the Trello MCP |
-| `board.members.user` | required | `5481d72a18acda04c8c30525` | `hooks/merge-gate.sh:26`, `merged-comment-gate.sh:32`, live `staging-gate.sh:31`, `bin/board-watch.sh:11`, `board-snapshot.sh:41` | Whose comments are instructions and sign-offs |
-| `board.members.agent` | required | `6ac171340cd94c75ebec054b` | `bin/board-wait.py:112`, `card-summary.sh:59`, `agents-status.sh:76`, `board-snapshot.sh:42` | The account agents post as |
+| `board.label_prefix` | `""` | `ari:cloud:trello::label/workspace/<workspace-id>/` | R78 | Label ids for the Trello MCP |
+| `board.members.user` | required | `<id>` | `hooks/merge-gate.sh:26`, `merged-comment-gate.sh:32`, live `staging-gate.sh:31`, `bin/board-watch.sh:11`, `board-snapshot.sh:41` | Whose comments are instructions and sign-offs |
+| `board.members.agent` | required | `<id>` | `bin/board-wait.py:112`, `card-summary.sh:59`, `agents-status.sh:76`, `board-snapshot.sh:42` | The account agents post as |
 | `board.lists.<role>.name` | the 11 names below | same | `bin/board-wait.py:279-280` (13 words with retired names), `release-gap.sh:46-47`, `board-snapshot.sh:113-114`, R31-41 | Finds a list by its name word |
-| `board.lists.<role>.id` | `""` | merging `6ac1312fa9595d5f08b34c45`, merged `6ac169193b554cd7f0909eb2`, done `6abfef3e5e85ae5f3a8be218` | live `merged-comment-gate.sh:29-31`; tracked `merge-gate.sh:25`, `merged-comment-gate.sh:29-31` (old APPROVED and INTEGRATION_TEST ids) | Gates check list ids |
+| `board.lists.<role>.id` | `""` | merging `<id>`, merged `<id>`, done `<id>` | live `merged-comment-gate.sh:29-31`; tracked `merge-gate.sh:25`, `merged-comment-gate.sh:29-31` (old APPROVED and INTEGRATION_TEST ids) | Gates check list ids |
 | `board.lists.<role>.aliases` | proposed `BRAINSTORM`, questions `WAITING FOR CLARITY`, merging `APPROVED`, merged `READY FOR STAGING` | same | `bin/board-wait.py:279-280`, `agents/token-auditor.md:71` | Retired names still matched |
-| `board.labels.active` | `""` | `6abfef3e5e85ae5f3a8be2f2` | R82, `bin/board-wait.py:116` | Actively worked (green) |
-| `board.labels.blocked` | `""` | `6acd1c78d90f2640cfa9c163` | R83, `bin/board-wait.py:113` | Blocked (dark red) |
-| `board.labels.no_action` | `""` | `6abfef3e5e85ae5f3a8be2f4` | R84, `bin/board-wait.py:117` | No action required (purple) |
-| `board.labels.conflict` | `""` | `6abfef3e5e85ae5f3a8be2f7` | R85, `bin/board-wait.py:115`, `agents/merger.md:39` | Merge conflict (orange) |
-| `board.labels.attended` | `""` | `6abfef3e5e85ae5f3a8be2f6` | R86, `bin/board-wait.py:114`, `agents/workflow-builder.md:71` | Needs attended session (yellow) |
+| `board.labels.active` | `""` | `<id>` | R82, `bin/board-wait.py:116` | Actively worked (green) |
+| `board.labels.blocked` | `""` | `<id>` | R83, `bin/board-wait.py:113` | Blocked (dark red) |
+| `board.labels.no_action` | `""` | `<id>` | R84, `bin/board-wait.py:117` | No action required (purple) |
+| `board.labels.conflict` | `""` | `<id>` | R85, `bin/board-wait.py:115`, `agents/merger.md:39` | Merge conflict (orange) |
+| `board.labels.attended` | `""` | `<id>` | R86, `bin/board-wait.py:114`, `agents/workflow-builder.md:71` | Needs attended session (yellow) |
 
 The 11 list roles, in board order: `proposed` (PROPOSED), `bugs` (BUG REPORTS), `todo` (TODO), `questions` (QUESTIONS), `building` (BUILDING), `testing` (TESTING), `review` (REVIEW), `merging` (MERGING), `merged` (MERGED), `releasing` (RELEASING), `done` (DONE). Their keys: `board.lists.proposed.name`, `board.lists.proposed.id`, `board.lists.proposed.aliases`, `board.lists.bugs.name`, `board.lists.bugs.id`, `board.lists.bugs.aliases`, `board.lists.todo.name`, `board.lists.todo.id`, `board.lists.todo.aliases`, `board.lists.questions.name`, `board.lists.questions.id`, `board.lists.questions.aliases`, `board.lists.building.name`, `board.lists.building.id`, `board.lists.building.aliases`, `board.lists.testing.name`, `board.lists.testing.id`, `board.lists.testing.aliases`, `board.lists.review.name`, `board.lists.review.id`, `board.lists.review.aliases`, `board.lists.merging.name`, `board.lists.merging.id`, `board.lists.merging.aliases`, `board.lists.merged.name`, `board.lists.merged.id`, `board.lists.merged.aliases`, `board.lists.releasing.name`, `board.lists.releasing.id`, `board.lists.releasing.aliases`, `board.lists.done.name`, `board.lists.done.id`, `board.lists.done.aliases`.
 
@@ -67,7 +68,7 @@ There are no per-list WIP numbers today. The WIP limits are `limits.card_test_se
 |---|---|---|---|---|
 | `github.user_login` | required | `shawnlauzon` | `bin/board-wait.py:119`, `hooks/merge-gate.sh:27`, `merged-comment-gate.sh:33`, live `review-policy.sh:65` | Only this login's review approves |
 | `github.app_id` | required | `5190062` | `bin/gh-app-token.sh:11` | App the agents act as |
-| `github.app_key_file` | required | `~/Development/runner_city_files/runnercity-claude.2026-10-04.private-key.pem` | `bin/gh-app-token.sh:12` | App private key |
+| `github.app_key_file` | required | `<app key file>` | `bin/gh-app-token.sh:12` | App private key |
 | `github.bot_name` | `""` | `runnercity-claude` | `bin/as-claude.sh:2-5`, `bin/gh-app-token.sh:38`, R253 | Bot identity in prose and errors |
 | `guarded.paths` | `.github/`, `.claude/hooks/`, `.claude/settings*.json`, `.mcp.json` | also `.claude/board/user-setup-changes.md`, `as-claude.sh`, `gh-app-token.sh`, `dev-merge-lock.sh`, `run-locked.sh`, `apply-settings-section.sh`, `fraud-stripe.sh`, `schema-dump.sh`, `agent-worktree.sh`, server `infra/` | live `review-policy.sh:100-104` | Always need the user's review |
 
@@ -86,13 +87,18 @@ RunnerCity: server first (`RunnerCityOrg/runnercity-api-server`, base `developme
 | `repos[].release_branch` | `""` | server `staging` | live `staging-gate.sh:43,110-114`, `agents/promoter.md:14,157` | Promoter-only release branch |
 | `repos[].release_tag_prefix` | `""` | mobile `client-build/` | live `staging-gate.sh:45,119`, R194, `agents/promoter.md:98-100` | Tag that triggers a client build |
 | `repos[].card_name_tag` | `#` | `server #`, `#` | R66 | Card name suffix `(#N, server #M)` |
-| `repos[].adapter` | `""` | (P5) `rails`, `flutter` | stack knowledge in the builder, tester and promoter agents | Stack adapter |
+| `repos[].adapter` | `""` | (not read yet: no adapter implementation) `rails`, `flutter` | stack knowledge in the builder, tester and promoter agents | Stack adapter |
 | `repos[].deps_commands` | `[]` | `bundle install --quiet`; `flutter pub get` | `bin/agent-worktree.sh:74,76` (env `RC_SKIP_DEPS`) | Worktree setup |
 | `repos[].worktree_env_placeholders` | `[]` | mobile `.env .env.development .env.staging .env.production .env.local` | `bin/agent-worktree.sh:59` | Empty env files in worktrees |
 | `repos[].worktree_env_links` | `[]` | mobile `.env .env.e2e`; server `.env.development.local .env.localhost` | `bin/agent-worktree.sh:63,67` | Env files linked into worktrees |
-| `repos[].review.always_paths` | `[]` | server `config/routes.rb app/controllers/* app/views/* app/channels/* app/mailers/* config/locales/*`; mobile `lib/* assets/* android/* ios/* web/* macos/* linux/* windows/*` | live `review-policy.sh:119-127` | Always needs review |
-| `repos[].review.free_paths` | `[]` | mobile `test/* integration_test/* test_driver/* docs/* tool/* backlog/* .claude/* *.md analysis_options.yaml dart_test.yaml devtools_options.yaml .gitignore`; server `test/* tests/* docs/* .claude/* *.md .rubocop.yml .gitignore` | live `review-policy.sh:119-127`, R134 | Never needs review |
-| `repos[].review.flag_paths` | `[]` | server: everything else (needs `App-visible:`) | live `review-policy.sh:95,125-127`, `bin/pr-ready.sh:87` | Review only when the PR says `App-visible: yes` |
+| `repos[].worktree_env_placeholder_roles` | `[]` | mobile `[]` (set per project) | `bin/agent-worktree.sh` | Roles that get the empty env placeholder files |
+| `repos[].worktree_env_link_roles` | `[]` | mobile and server builder roles | `bin/agent-worktree.sh` | Roles that get the env files linked in |
+| `repos[].worktree_git_exclude` | `false` | `true` for the mobile repo | `bin/agent-worktree.sh` | Add the placeholder env files to the worktree's git exclude |
+| `repos[].review.always_paths` | `[]` | server `infra/*`; mobile `assets/* android/* ios/* web/* macos/* linux/* windows/*` (the app-visible folders a `*` free path could otherwise match) | live `review-policy.sh`, as the policy runs it: privileged, then always, then flag, then free | Always needs review |
+| `repos[].review.free_paths` | `[]` | mobile `test/* integration_test/* test_driver/* docs/* tool/* backlog/* .claude/* *.md analysis_options.yaml dart_test.yaml devtools_options.yaml .gitignore`; server `test/* tests/* docs/* .claude/* *.md .rubocop.yml .gitignore` | live `review-policy.sh:119-127`, R134 | Never needs review. Order of the policy: guarded paths, `always_paths`, `flag_paths`, `free_paths`, `default`; a `*` matches `/`, so a repo that frees `*.md` lists `assets/* android/* ios/* web/* macos/* linux/* windows/*` in `always_paths` (a test pins it) |
+| `repos[].review.default` | `"review"` | mobile `review`; server `flag` | review-policy.sh | What a file in no review list needs: `review` or `flag` |
+| `repos[].no_add_paths` | `[]` | mobile `docs/ui_tests/` | merge-gate.sh | Prefixes a PR may not add or change files under (screenshots are never in git) |
+| `repos[].review.flag_paths` | `[]` | mobile `lib/*` (the server uses `default = "flag"` instead: everything not listed needs `App-visible:`) | live `review-policy.sh`, `bin/pr-ready.sh:87` | Review only when the PR says `App-visible: yes` |
 | `repos[].review.keep_approval_paths` | `[]` | mobile `test/ integration_test/ docs/`; server `test/ tests/ docs/` | live `review-policy.sh:182`, R134 | Commits after approval that keep it |
 | `repos[].kind.agents_paths` | `[]` | mobile `.claude/* CLAUDE.md *.md docs/* backlog/*` (not `docs/ui_tests/*`); server `.claude/* *.md docs/*` | `bin/card-kind.sh:64-78` | [AGENTS] kind |
 | `repos[].kind.tests_paths` | `[]` | mobile `test/* integration_test/* test_driver/* tool/* .github/* analysis_options.yaml dart_test.yaml devtools_options.yaml .gitignore`; server `test/* tests/* .github/* .rubocop.yml .gitignore` | `bin/card-kind.sh:64-78` | Tests kind |
@@ -176,7 +182,7 @@ RunnerCity: server first (`RunnerCityOrg/runnercity-api-server`, base `developme
 | `liveness.floating_roles` | merger, promoter, workflow-builder, workflow-verifier | `bin/agent-state.sh:113` | Card from the last touch |
 | `liveness.shared_roles` | board-watcher, merger, promoter, workflow-builder, workflow-verifier, token-auditor, fraud-watcher, sentry-triager | `bin/usage/agg.py:100,120` (also lists `cani-agent`, `general-purpose`, `Explore`) | Left out of per-card cost |
 
-The fixed set of 15 agent types in `bin/agent-state.sh:107-109` becomes the keys of `models` plus the project's own agents (P3 makes it prefix-tolerant).
+The fixed set of 15 agent types in `bin/agent-state.sh:107-109` becomes the keys of `models` plus the project's own agents (liveness is prefix-tolerant: `kourai:card-manager` and `card-manager` are the same type).
 
 ## Optional agents and their schedules
 
@@ -219,7 +225,7 @@ Each agent file's `model:` line (line 4) is rendered from these. Project agents 
 
 RunnerCity's project agents add `mobile-builder = "opus"`, `server-builder = "opus"`, `android-builder = "haiku"`, `ios-builder = "haiku"`. The token audit's price table (`bin/usage/agg.py:22`, `permodel.py:32`) is a fact about models, not a setting, and stays in code.
 
-## Adapter settings (the `adapters` table, filled in P5)
+## Adapter settings (the `adapters` table; nothing reads it yet, see `docs/ADAPTERS.md`)
 
 Stack and infrastructure values move into `[adapters.<name>]` of the same config file, so they too change without a code change. Each adapter documents its own keys. RunnerCity's today:
 
@@ -253,7 +259,7 @@ These stay in code: they are protocol between agents and gates, or facts.
 - Exit codes and verdict words; sha, short-link and card-id formats.
 - Trello, GitHub and Stripe API bases and versions.
 - Trello read page sizes and output trimming widths in the scripts.
-- The `rules-ranges.sh` line markers (replaced by section names in P4).
+- The `rules-ranges.sh` markers: they are heading names, `[core: <heading>]` and `[project: <heading>]`.
 - RunnerCity code conventions in `board/agent-rules.md` (they move to that project's rules).
 
 ## Drift found while taking the inventory
@@ -264,6 +270,24 @@ Reported, not fixed (kourai copies runner_city as it is):
 2. The full API suite takes "9 to 25 minutes" in `merger.md:76` and W115, "about 9 to 15 minutes" in W96.
 3. `bin/test-server.sh:465` checks servers 1 to 4 as taken, whatever the server count.
 4. The tracked `hooks/base-push-gate.sh` maps `main` to `shawnlauzon/runner_city`; live hooks use `RunnerCityOrg/runnercity-app`.
-5. List id `6ac1312fa9595d5f08b34c45` is `APPROVED_LIST` in the tracked hooks and `MERGING_LIST` live.
+5. List id `<id>` is `APPROVED_LIST` in the tracked hooks and `MERGING_LIST` live.
 6. The hooks have no overrides at all (board, `trello.env`, member and list ids), while most bin scripts accept env overrides.
 7. The 12-hour gap is written in `release-gap.sh:25` and again in the `board-wait.py:39` docstring.
+
+## Added by the script sweep
+
+| Key | Default | RunnerCity | Where today | What it does |
+|---|---|---|---|---|
+| `paths.project_bin` | `{repos.0.path}/.claude/bin` | same | new | Where `kourai-project` finds the project layer's own scripts |
+| `paths.active_card_dir` | `{project.state_dir}/active` | same | `active-card.sh` | Active-card files |
+| `paths.board_watch_since` | `{project.state_dir}/board-watch.since` | same | `board-watch.sh` | Since-cursor of the old watch script |
+| `paths.agent_state_cache` | `{project.state_dir}/agent-state-cache` | same | `agent-state.sh` | Transcript scan cache |
+| `paths.workflow_checks_cache` | `{project.state_dir}/workflow-checks-cache` | same | `workflow-checks.sh` | Check cache |
+| `paths.ci_unstick_dir` | `{project.state_dir}/ci-unstick` | same | `ci-wait.sh` | ci-unstick marks |
+| `board.workspace_id` | `""` | the board's workspace | `card-summary.sh`, `standing-card.sh` | Trello workspace id |
+| `board.members.internal` | `[]` | the team's member ids | `merged-cards.sh` | Members whose cards are not a reporter's |
+| `board.labels.waiting_resource` | `""` | the label | `board-wait.py` | Waiting-on-a-resource label |
+| `agents.plugin` | the nine plugin agents | same | new | Agents started as `kourai:<name>` |
+| `agents.project` | `[]` | the project agents | new | Agents started by bare name |
+| `paths.disk_folders` | `~/.gradle` | `~/.gradle`, the agents' temp folder | `board-wait.py` | Folders board-wait offers to clean |
+| `liveness.worktree_roles` | the five builder/tester roles | same | `board-wait.py` | Roles whose worktree folders board-wait cleans |

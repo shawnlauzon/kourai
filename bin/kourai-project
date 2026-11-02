@@ -1,0 +1,13 @@
+#!/bin/bash
+# Runs a script of the project layer (the project's own .claude/bin, not the plugin's):
+#   kourai-project <script> [args...]
+# The folder is paths.project_bin in the installation's config.
+set -euo pipefail
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+dir=$("$here/kourai-config" get paths.project_bin)
+script=${1:?usage: kourai-project <script> [args...]}
+shift
+# A name, never a path: the allow rules name scripts, and a path would run anything under (or outside) the folder.
+case "$script" in */*|.*|"") echo "kourai-project: $script is not a script name of the project's script folder" >&2; exit 2 ;; esac
+[ -x "$dir/$script" ] || { echo "kourai-project: no $script in $dir" >&2; exit 1; }
+exec "$dir/$script" "$@"

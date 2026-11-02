@@ -1,11 +1,25 @@
-#!/usr/bin/env python3
-"""kourai-config: read the installation's config. See bin/kourai_config.py."""
-import os
+#!/bin/bash
+# kourai-config: read the installation's config. See bin/kourai_config.py.
+# Picks the first Python 3.11 or later it finds (tomllib), so a PATH that lists an older
+# system python3 first (macOS /usr/bin/python3 is 3.9) still works.
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+for py in python3.14 python3.13 python3.12 python3.11 python3; do
+  p=$(command -v "$py" 2>/dev/null) || continue
+  "$p" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null || continue
+  exec "$p" -B -c '
+import os, sys
+sys.path.insert(0, sys.argv[1])
+import kourai_config
+sys.exit(kourai_config.main(sys.argv[2:]))' "$here" "$@"
+done
+for d in /opt/homebrew/bin /usr/local/bin; do
+  for py in python3.14 python3.13 python3.12 python3.11; do
+    [ -x "$d/$py" ] && exec "$d/$py" -B -c '
 import sys
-
-# Never write __pycache__ into the plugin folder.
-sys.dont_write_bytecode = True
-sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
-import kourai_config  # noqa: E402
-
-sys.exit(kourai_config.main(sys.argv[1:]))
+sys.path.insert(0, sys.argv[1])
+import kourai_config
+sys.exit(kourai_config.main(sys.argv[2:]))' "$here" "$@"
+  done
+done
+echo "kourai-config needs Python 3.11 or later (tomllib)" >&2
+exit 2

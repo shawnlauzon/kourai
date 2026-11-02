@@ -1,4 +1,4 @@
-# Installing, updating and rolling back (P7 design)
+# Installing, updating and rolling back
 
 An update is one reviewable step and a rollback is one command. The user
 changes one line, `install.version`, in the installation's config. Then
@@ -7,8 +7,10 @@ will change. `kourai-install apply` makes exactly those changes, after
 backing up each file it touches. `kourai-install rollback` puts every one of
 those files back and switches to the previous release, with no network.
 
-Status: design only. Nothing here is built yet. Two facts are still to be
-checked before building; they are marked **(verify)**.
+The installer is `installer/kourai-install` (one Python file, standard library
+only). Its tests are `tests/test-installer.sh`. The two facts that were open in
+the design were checked against Claude Code 2.1.305 on a scratch config
+folder; the results are under "Why a per-installation local marketplace".
 
 ## What an installation is made of
 
@@ -39,17 +41,32 @@ So each installation gets its own small marketplace, named
 `kourai-<project.name>`, in its state folder. Its single entry points at
 `./releases/<version>`. The plugin keeps the name `kourai`, so agents are
 still `kourai:card-manager` in every project. A plugin in a marketplace
-added from a local path loads in place, so `${CLAUDE_PLUGIN_ROOT}` is the
-release folder itself. Each release folder is a read-only checkout of the
-tag `kourai--v<version>`, and its commit is checked against the tag.
+added from a local path is copied by `claude plugin install` into a
+version-keyed cache (`$CLAUDE_CONFIG_DIR/plugins/cache/<marketplace>/kourai/<version>`),
+and `${CLAUDE_PLUGIN_ROOT}` is that cache folder, not the release folder.
+`claude plugin list --json` shows both: `installPath` (the cache) and
+`readFromFolder` (the release). Each release folder is a read-only checkout of
+the tag `kourai--v<version>`, and its commit is checked against the tag. A
+`sha:<40 hex>` pin may be planned (to try an unreleased commit) but never
+applied or checked.
 
-- **(verify)** `extraKnownMarketplaces` takes a local-directory source in the
-  project's `settings.local.json`, not only in `settings.json`. Fallback:
-  `claude plugin marketplace add <dir> --scope local`, run by the installer.
-- **(verify)** Switching the entry to another release folder, then running
-  `/reload-plugins` or starting a new session, loads the new folder. The docs
-  say updates are found by comparing versions. Each release has its own
-  `version` in `plugin.json`, so the version differs on every switch.
+Checked on 2.1.305 (answers to what the design marked **(verify)**):
+
+- `claude plugin marketplace add <dir> --scope local` works. It writes
+  `extraKnownMarketplaces.<name>.source = {source: directory, path: <dir>}` to
+  `<project>/.claude/settings.local.json`, and records the marketplace in
+  `$CLAUDE_CONFIG_DIR/plugins/known_marketplaces.json`. The installer uses this
+  command, so it never edits those two keys itself.
+- `claude plugin install kourai@kourai-<name> --scope local` writes
+  `enabledPlugins` to the same file. Re-pointing the marketplace entry to
+  another release folder and running `marketplace update` then `plugin update`
+  loads the new version (each release has its own `version` in `plugin.json`).
+- `claude plugin validate --strict .` passes on the repo.
+  `claude plugin tag --dry-run` prints the tag `kourai--v<version>` it would create.
+- One quirk found while testing: when the project folder sits inside another
+  git checkout (as a test scratch folder under a repo would), the settings keys
+  were not written. A real installation's `repos.0.path` is a git repo root, so
+  it is not affected, but the installer test runs outside any repo for that reason.
 
 The documented alternative is to install from GitHub with
 `"source": {"source": "github", "repo": "shawnlauzon/kourai", "ref": "kourai--v0.2.0"}`.
@@ -66,9 +83,14 @@ it that way:
   with their own copy of `kourai-config` and the defaults. It records each
   file's sha256 and registers the hooks by absolute path, with `--config`
   written into the command.
-- `kourai-install check`, and `board-wait` on every poll, compare the
-  registered files with the recorded hashes. They print `GATE DRIFT` on a
-  mismatch (fail closed).
+- `kourai-install check` compares the installed files with the recorded hashes
+  (`SHA256SUMS`) and prints `GATE DRIFT` on a mismatch (fail closed). `kourai-hook`
+  refuses to run a gate whose hash does not match. A per-poll check inside
+  `board-wait` is not built yet; it is listed in `docs/SWITCH-OVER.md` as a follow-up.
+- `check` also prints `CONFIG DRIFT` when the config (`<state_dir>/kourai.toml`) changed since the apply. The
+  config decides the gates (the bot login, the review tables, the guarded paths), so a change is read, then
+  recorded by running `plan` and `apply` again. `plan` also lists, in its section 7, every line of the current
+  settings that still names a moved script by its old `.claude/bin` path.
 - `check` also compares the active release folder with its tag. This is
   agent-flow's kit-verify idea: it catches local edits to plugin files. It
   also lists project agents that override plugin agents of the same name.
@@ -77,8 +99,14 @@ it that way:
 
 ## The commands
 
-`kourai-install` is run only by the user, attended. Agents never run it,
-as with `apply-settings-section.sh` today.
+`kourai-install` is run by the user, attended, for `plan`, `apply`, `rollback`
+and `prove`. Agents never run those, as with `apply-settings-section.sh`
+today. The one exception is `check`: it changes nothing (it reads the config,
+the installed files and the release tag with `git ls-remote`), and the
+workflow verifier's drift check runs it by its full path,
+`python3 "$(kourai-config path --plugin-root)/installer/kourai-install" check`;
+the project's settings section carries the allow entry that names exactly that
+command, because `kourai-install` is not on the PATH.
 
 ### `plan`
 
@@ -137,7 +165,7 @@ shows that diff and asks before overwriting it.
 
 Read-only and fast. It reports the config's validity, gate drift, plugin
 drift against the tag, settings drift (a kourai-owned key changed by hand),
-and overrides. `board-wait` runs the gate part of it.
+and overrides.
 
 ### `prove`
 
@@ -173,20 +201,35 @@ review.
 
 ## Testing the installer
 
-Its tests follow the repo rule: fakes first on `PATH`. The kourai remote is
-a local bare repo reached by a `file://` path. The `git` fake must then allow
-`fetch` and `clone` for `file://` URLs only. `claude` is a fake that records
-`plugin marketplace` calls. `~/.claude/settings.json` and the project
-settings are temporary copies, passed as `--user-settings` and
-`--project-settings`, so a test can never touch the real ones.
+`tests/test-installer.sh` builds a local git repo of the working tree, tags it
+`kourai--v<version>`, and uses it as `--source`. The `git` fake lets local
+paths through. The real `claude` binary runs the `plugin` commands, but only
+with `CLAUDE_CONFIG_DIR` set to a scratch folder: `guard_claude_config` in
+`tests/lib.sh` stops the test if it is unset or is the live `~/.claude`, and
+`guard_path` refuses any path under the live `~/.claude` or the live
+runner_city checkout. The settings files are temporary files passed as
+`--user-settings` and `--project-settings`. The cases: plan changes nothing
+but its own folders; apply keeps the user's own settings lines and hooks and
+adds the marked ones; check passes; a second plan has nothing to change; a
+hand-edited gate is named `GATE DRIFT`; a config edited after plan is
+refused; a sha pin is refused; running agents hold apply; rollback restores
+both settings files byte for byte.
 
-## Open questions for the user
+`prove` is shallow on purpose: it runs `check`, finds every owned allow-line
+script on the plugin's `bin/` PATH, and runs each registered gate once on a
+harmless call, expecting exit 0. Whether the auto-mode rules match is proved
+only by running the board attended (`docs/SWITCH-OVER.md`).
 
-1. Is the per-installation local marketplace acceptable, or is one kourai
-   version per machine fine? One version per machine would allow the
-   simpler GitHub source pin.
-2. Should `apply` refuse while any board agent runs, or only while the
-   watcher runs?
-3. Should tag protection be set on `kourai--v*` in the kourai repo?
-4. Where should kourai's own tests run in CI? There is no self-hosted runner
-   for this repo, and GitHub-hosted minutes are paid out of pocket.
+## Decisions on the design's open questions
+
+Decided while building, for the user to overrule:
+
+1. **Per-installation local marketplace: kept.** It lets livecorrectly-site run a newer
+   version while RunnerCity stays put.
+2. **`apply` refuses while any board agent runs** (not only the watcher), by
+   `agent-state.sh`. An update lands between batches.
+3. **Tag protection on `kourai--v*` is recommended.** The installer fetches
+   only a tag and checks the release folder's commit against it; a tag that can be
+   moved would defeat that. Setting it needs the repo owner.
+4. **Kourai's own tests run locally** (`tests/run.sh`), with no CI, until the user
+   decides where to run them. No GitHub-hosted minutes are used.

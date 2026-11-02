@@ -1,1 +1,20 @@
-_fake-network-tool
+#!/usr/bin/env bash
+# Stand-in for curl during tests. A call whose every URL is on this machine (127.0.0.1 or localhost:
+# the tests start a small fake server there) runs the real curl; any other call is a test bug: a
+# test must never reach GitHub, Trello or a server. It logs the call and fails loudly.
+self_dir=$(cd "$(dirname "$0")" && pwd)
+urls=() ; for a in "$@"; do case "$a" in http://*|https://*) urls+=("$a") ;; esac; done
+local_only=0
+if [ "${#urls[@]}" -gt 0 ]; then
+  local_only=1
+  for u in "${urls[@]}"; do case "$u" in http://127.0.0.1[:/]*|http://localhost[:/]*) ;; *) local_only=0 ;; esac; done
+fi
+if [ "$local_only" = 1 ]; then
+  real=$(PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -vxF "$self_dir" | paste -sd: -) command -v curl) && exec "$real" "$@"
+fi
+tool=curl
+echo "FAKE $tool: network tool called in a test: $tool $*" >&2
+if [ -n "${KOURAI_TEST_NETLOG:-}" ]; then
+  printf '%s %s\n' "$tool" "$*" >> "$KOURAI_TEST_NETLOG"
+fi
+exit 97

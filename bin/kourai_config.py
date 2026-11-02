@@ -164,6 +164,9 @@ def _lookup(cfg, key):
             node = node[part]
         elif isinstance(node, list) and part.isdigit() and int(part) < len(node):
             node = node[int(part)]
+        elif isinstance(node, list) and any(isinstance(i, dict) and i.get("id") == part for i in node):
+            # A list of tables is also addressed by each table's id: repos.app.slug.
+            node = next(i for i in node if isinstance(i, dict) and i.get("id") == part)
         else:
             raise UnknownKey(key)
     return node
@@ -232,7 +235,18 @@ def load(path=None):
         _interpolate(merged, problems)
     if problems:
         raise ConfigError(EXIT_INVALID, path, problems)
+    _auto_transcripts(merged)
     return merged
+
+
+def _auto_transcripts(cfg):
+    """project.transcripts_dir "auto": Claude Code's folder for the first repo's checkout."""
+    proj = cfg.get("project", {})
+    if proj.get("transcripts_dir") == "auto":
+        repos = cfg.get("repos") or []
+        if repos and repos[0].get("path"):
+            enc = re.sub(r"[^A-Za-z0-9]", "-", repos[0]["path"])
+            proj["transcripts_dir"] = os.path.join(os.path.expanduser("~"), ".claude", "projects", enc)
 
 
 def get(cfg, key):
@@ -276,7 +290,7 @@ USAGE = """usage: kourai-config [--config FILE] <command>
   get KEY        one value (dotted key, array index as a number); tables print as JSON
   json [KEY]     the merged config (or one key) as JSON
   shell [KEY]    KOURAI_<KEY>=<value> lines for scalars and scalar arrays, quoted for eval
-  path           the config file in use
+  path [--plugin-root]  the config file in use (or the plugin folder)
   defaults       the defaults file in use"""
 
 
@@ -316,7 +330,7 @@ def main(argv):
         if cmd == "check":
             print("CONFIG OK: %s" % path)
         elif cmd == "path":
-            print(path)
+            print(plugin_root() if rest[:1] == ["--plugin-root"] else path)
         elif cmd == "get":
             print(render(get(cfg, rest[0])))
         elif cmd == "json":

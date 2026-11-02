@@ -22,7 +22,7 @@ committed here by mistake.
 ## How scripts find it
 
 1. `--config <file>` on the command line, if given.
-2. Otherwise `$KOURAI_CONFIG`. The installer (P7) sets it in the project's
+2. Otherwise `$KOURAI_CONFIG`. The installer sets it in the project's
    `.claude/settings.local.json` `env`, so every Bash command an agent runs
    in that project has it.
 3. Otherwise there is no config: `kourai-config` prints `NO CONFIG` and
@@ -39,7 +39,7 @@ TOML rather than YAML, because:
   PyYAML, which is not installed on this Mac, and the hooks must not depend
   on a pip install.
 - It has comments, unlike JSON.
-- Its types are explicit: `7Tch9xIX`, `0123` or `no` stay strings when
+- Its types are explicit: `<board-id>`, `0123` or `no` stay strings when
   quoted, where YAML would turn some of them into numbers or booleans.
 
 Top-level keys (only `repos`) must come before the first `[table]`.
@@ -90,11 +90,20 @@ Start from `config/example.toml`: copy it to `<state_dir>/kourai.toml` and
 set only what differs from the defaults. `docs/VARIABLES.md` lists every
 key, its default, RunnerCity's value and where it was hard-coded.
 
-## Moving the scripts onto it (the rest of P2)
+## Real values, scripts and tests
 
-As each RunnerCity script is copied into `bin/`, its constants become
-config reads. The env overrides scripts already accept (`RC_CARD_TEST_SERVERS`,
-`BOARD_WAIT_POLL`, `RELEASE_GAP_HOURS` and the others listed in
-`docs/VARIABLES.md`) keep working for tests, and win over the config when set.
-P2 is done when no 24-character id, board link or `/Users/shawn` path is
-left outside a config file, and the tests pass with a fake config.
+No 24-character id, board link or `/Users/<you>` path is left outside a config file in this repo:
+`tests/scan-ids.sh` checks the diff and the whole tree, with an exact allowlist for the few
+places that name a fake. The script tests run against `tests/fixtures/config.toml`, whose every
+name and id is fake; a mechanical mapping from RunnerCity's real values to those fakes is the
+only change the ported tests needed. The env overrides scripts already accept
+(`RC_CARD_TEST_SERVERS`, `BOARD_WAIT_POLL`, `RELEASE_GAP_HOURS` and the others listed in
+`docs/VARIABLES.md`) keep working, and win over the config when set.
+
+The `[agents]` table lists the project's own agents (`project = [...]`); plugin agents are
+known to the plugin. A start by the wrong name (a plugin agent by bare name, a project agent
+with the `kourai:` prefix) fails `tests/test-start-names.sh`.
+
+`install.version` is the bare version (`0.1.0-rc1`); the tag is `kourai--v0.1.0-rc1`. An
+installation may pin `sha:<40 hex digits>` to try an unreleased commit: `plan` accepts it,
+`apply` and `check` refuse it.

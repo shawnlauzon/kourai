@@ -54,7 +54,7 @@ Every path under `.claude/{agents,commands,bin,hooks,board,skills}` of runner_ci
 | `.claude/bin/fraud-stripe.sh` | stays |  |  |
 | `.claude/bin/ft-prepare.sh` | stays |  |  |
 | `.claude/bin/ft-report.sh` | stays |  |  |
-| `.claude/bin/gh-app-token.sh` | moves | `bin/gh-app-token.sh` | swept |
+| `.claude/bin/gh-app-token.sh` | both | `bin/gh-app-token.sh` | kourai ships a config-driven copy; RunnerCity keeps its own because its as-claude.sh calls it next to itself |
 | `.claude/bin/heartbeat.sh` | both | `bin/heartbeat.sh` | kourai ships a config-driven copy; RunnerCity keeps its own because tool/ and the server call it by path |
 | `.claude/bin/merged-cards.sh` | moves | `bin/merged-cards.sh` | swept |
 | `.claude/bin/pause-lib.sh` | both | `bin/pause-lib.sh` | kourai ships a config-driven copy; RunnerCity keeps its own because tool/ and the server call it by path |

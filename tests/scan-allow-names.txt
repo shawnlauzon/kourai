@@ -15,3 +15,8 @@ tests/test-agent-state.sh
 tests/test-board-scripts.sh
 tests/test-hook-trello-retry.sh
 tests/test-merged-comment-gate-short-form.sh
+docs/GETTING-STARTED.md
+docs/SWITCH-OVER.md
+docs/HOW-IT-RUNS.md
+docs/WALKTHROUGH.md
+docs/ADAPTERS.md

@@ -26,7 +26,10 @@
 #   - it changes no files at all (a history-only merge: GitHub's changed_files is 0): what the merge
 #     resolves away leaves the next release, so it goes to the approval check below, never to NO REVIEW NEEDED;
 #   - it is in a repo the config does not list.
-# review.free_paths never need review. Otherwise it needs NO REVIEW.
+# review.free_paths never need review, but only when the file is in no flag_paths and no always_paths glob
+# (the order of the checks: privileged, always_paths, flag_paths, free_paths, review.default). A glob like *.md
+# matches in every folder, so a repo that frees *.md lists its app-visible folders in always_paths.
+# Otherwise it needs NO REVIEW.
 #
 # A PR that needs review is APPROVED when the user's (github.user_login) newest
 # review that approves, requests changes or was dismissed is APPROVED, and was
@@ -109,8 +112,8 @@ while IFS= read -r f; do
   [ -z "$f" ] && continue
   if privileged "$f"; then add review "$f"; continue; fi
   if [ -z "$rid" ]; then add review "$f"
+  elif in_list "$f" "$flag_paths"; then add flag "$f"   # before free_paths: lib/x/README.md is still lib/ (today's order)
   elif in_list "$f" "$free_paths"; then :
-  elif in_list "$f" "$flag_paths"; then add flag "$f"
   elif [ "$rdefault" = flag ]; then add flag "$f"
   else add review "$f"; fi
 done <<<"$files"

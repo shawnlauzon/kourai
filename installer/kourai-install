@@ -158,6 +158,38 @@ class Inst:
                 out.append(fn)
         return out
 
+    def stale_lines(self, root, cur_p, cur_u):
+        """(where, text) of each line in the current settings that the installer does not own and that names a
+        script of the plugin's bin/ or an agent of the plugin's agents/ under the project's .claude/, or any file
+        of the project's .claude/hooks/. After the switch those files are gone from the project, so the line
+        matches nothing (a stale allow entry) or points at a missing file (a stale hook)."""
+        proj = os.path.expanduser(self.repo0).rstrip("/")
+        bins = set(self.bin_scripts(root)) | {"kourai-install"}
+        agents = set(os.listdir(os.path.join(root, "agents"))) if os.path.isdir(os.path.join(root, "agents")) else set()
+        def stale(text):
+            for m in re.finditer(re.escape(proj) + r"/\.claude/(bin|agents|hooks)/([A-Za-z0-9_.-]*)", text):
+                kind, name = m.group(1), m.group(2)
+                if kind == "hooks" or (kind == "bin" and name in bins) or (kind == "agents" and name in agents):
+                    return True
+            return False
+        owned_p = self.record.get(MARK, {}).get("allow", [])
+        owned_u = self.record.get(MARK, {}).get("automode", [])
+        out = []
+        for t in cur_p.get("permissions", {}).get("allow", []):
+            if isinstance(t, str) and t not in owned_p and stale(t):
+                out.append(("project allow", t))
+        for ev, groups in (cur_p.get("hooks") or {}).items():
+            for g in groups:
+                for h in g.get("hooks", []):
+                    c = h.get("command", "")
+                    if "KOURAI_BIN=" not in c and stale(c):
+                        out.append(("project hook (%s)" % ev, c))
+        for key, vals in (cur_u.get("autoMode") or {}).items():
+            for t in vals if isinstance(vals, list) else []:
+                if isinstance(t, str) and t not in owned_u and stale(t):
+                    out.append(("auto-mode %s" % key, t[:240]))
+        return out
+
     def render_template(self, root, name):
         cfg = self.cfg_json(root)
         text = read_text(os.path.join(root, "templates", name))
@@ -358,6 +390,12 @@ def cmd_plan(i):
     if os.path.isdir(agents_dir):
         over = [f for f in sorted(os.listdir(agents_dir)) if os.path.isfile(os.path.join(root, "agents", f))]
     lines += ["## 6. Project agents that override plugin agents", ""] + (["- " + f for f in over] or ["(none)"]) + [""]
+    stale = i.stale_lines(root, cur_p, cur_u)
+    lines += ["## 7. Stale lines in the current settings", "",
+              "Lines the installer does not own that name a script, hook or agent under the project's .claude/ that this release",
+              "moves into the plugin (they keep working until the files are gone; after the switch they match nothing):", ""]
+    lines += ["- %s: %s" % (w, t) for w, t in stale] or ["(none)"]
+    lines += [""]
     plans = os.path.join(i.kdir, "plans")
     os.makedirs(plans, exist_ok=True)
     plan_file = os.path.join(plans, "%s-to-%s.md" % ((old or "none"), i.version.replace(":", "-")))
@@ -368,6 +406,7 @@ def cmd_plan(i):
               "release": tree_hashes(root), "record": sha(i.record_path) if os.path.exists(i.record_path) else None}
     write_json(os.path.join(stage, "plan.json"), {"version": i.version, "from": old, "inputs": inputs, "plan_file": plan_file})
     print("Plan written: " + plan_file)
+    print("Stale lines in the current settings: %d (plan section 7)" % len(stale))
     return 10
 
 

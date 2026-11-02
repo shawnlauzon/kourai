@@ -21,7 +21,7 @@ set -u -o pipefail
 . "$(dirname "${BASH_SOURCE[0]}")/kourai-env.sh"
 env_file=${TRELLO_ENV_FILE:-$(kc paths.trello_env)}
 api=${TRELLO_API_BASE:-https://api.trello.com/1}
-policy=${REVIEW_POLICY:-kourai-hook review-policy.sh}
+policy=${REVIEW_POLICY:-}
 short=${1:-}
 [[ "$short" =~ ^[A-Za-z0-9]{8}$ ]] || { echo "usage: pr-ready.sh <shortLink>" >&2; exit 2; }
 set -a
@@ -56,7 +56,8 @@ while read -r repo n; do
     ci_none=false
   fi
   # The policy exits 1 for REVIEW NEEDED and 2 for ERROR: its line is the answer.
-  verdict=$("$policy" check "$repo#$n" 2>/dev/null | head -n 1) || true
+  if [ -n "$policy" ]; then verdict=$("$policy" check "$repo#$n" 2>/dev/null | head -n 1) || true
+  else verdict=$(kourai-hook review-policy.sh check "$repo#$n" 2>/dev/null | head -n 1) || true; fi
   python3 -I - "$repo" "$n" "$tmp/pr" "$tmp/checks" "${verdict:-ERROR: no answer}" "$ci_none" "$tmp/checks.err" <<'PY'
 import json, re, sys
 repo, n, pr_file, checks_file, verdict, none, err_file = sys.argv[1:]

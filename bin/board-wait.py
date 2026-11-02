@@ -355,6 +355,16 @@ ACTION_PAGES = 67   # the same 20000 actions as 20 pages of 1000
 PAUSE_DIR = env("BOARD_WAIT_PAUSE_DIR", cfg("paths.pause_dir"))
 CARD_TEST_SERVER = env("BOARD_WAIT_CARD_TEST_SERVER", os.path.join(PROJECT_BIN, "card-test-server.sh"))
 REVIEW_POLICY = env("RC_REVIEW_POLICY", os.path.join(cfg("paths.hooks_dir"), cfg("install.version"), "review-policy.sh"))
+REVIEW_POLICY_OVERRIDE = "RC_REVIEW_POLICY" in os.environ   # a test's stand-in script
+
+
+def policy_command(script, ref):
+    """The command that runs the review policy on `ref`. The installed gate runs through kourai-hook (it sets
+    KOURAI_BIN, which review-policy.sh needs, and checks the copy's recorded hash); a stand-in named by
+    RC_REVIEW_POLICY runs as a plain script."""
+    if REVIEW_POLICY_OVERRIDE:
+        return ["bash", script, "check", ref]
+    return [os.path.join(BIN, "kourai-hook"), os.path.basename(script), "check", ref]
 
 
 def parse_iso(text):
@@ -2742,7 +2752,7 @@ class Wait:
         key = f"{repo}#{n}:{pr.get('headRefOid')}:{review_id}:{hashlib.sha1((pr.get('body') or '').encode()).hexdigest()}:{sha}"
         if key in self.s["reviewpol"]:
             return self.s["reviewpol"][key]
-        out = run(["bash", script, "check", f"{repo}#{n}"])
+        out = run(policy_command(script, f"{repo}#{n}"))
         line = (out or "").strip().splitlines()[:1]
         line = line[0] if line else ""
         if line.startswith(("NO REVIEW NEEDED:", "APPROVED:")):

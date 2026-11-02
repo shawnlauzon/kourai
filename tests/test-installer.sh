@@ -35,6 +35,21 @@ sed -e "s#/Users/shawn/Development/example_files#$STATE#" \
     -e "s#^version = .*#version = \"$VER\"#" "$KOURAI_ROOT/tests/fixtures/config.toml" > "$CFG"
 echo '{"autoMode":{"allow":["$defaults","keep me"]},"other":1}' > "$T/user-settings.json"
 echo '{"permissions":{"allow":["Bash(ls *)"]},"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo mine"}]}]},"x":2}' > "$PROJ/.claude/settings.local.json"
+# Copies of the live settings' shapes (the RunnerCity allow entries by full path, the auto-mode rules that name
+# .claude/bin paths): the plan must list every one of them as stale (plan section 7).
+python3 - "$PROJ" "$T/user-settings.json" <<'PY'
+import json, sys
+proj, us = sys.argv[1:]
+names = "heartbeat card-test-server dev-merge-lock board-snapshot card-kind card-summary pr-ready pr-conflicts agent-state ci-wait run-wait board-wait release-gap remerge-check merged-cards code-review-check code-review-wait workflow-checks active-card watcher-reload urgent-hold".split()
+p = proj + "/.claude/settings.local.json"
+d = json.load(open(p))
+d["permissions"]["allow"] += ["Bash(%s/.claude/bin/%s.sh:*)" % (proj, n) for n in names]
+d["permissions"]["allow"] += ["Bash(%s/.claude/bin/test-server.sh ports:*)" % proj, "Bash(%s/.claude/bin/test-workflow-checks.sh:*)" % proj]
+json.dump(d, open(p, "w"))
+u = json.load(open(us))
+u["autoMode"]["allow"] += ["Rule %d: run %s/.claude/bin/%s.sh from the checkout" % (k, proj, n) for k, n in enumerate(names[:21])]
+json.dump(u, open(us, "w"))
+PY
 cp "$PROJ/.claude/settings.local.json" "$T/project-before.json"
 cp "$T/user-settings.json" "$T/user-before.json"
 printf '#!/bin/sh\n' > "$T/no-agents.sh"; chmod +x "$T/no-agents.sh"
@@ -50,8 +65,18 @@ assert_contains "plan names the plan file" "Plan written" "$out"
 assert_eq "plan changes no settings" "$(cat "$T/project-before.json")" "$(cat "$PROJ/.claude/settings.local.json")"
 assert_eq "plan changes no user settings" "$(cat "$T/user-before.json")" "$(cat "$T/user-settings.json")"
 [ ! -e "$HOOKS" ] && pass || fail "plan copied hooks"
+assert_contains "plan reports the stale line count" "Stale lines in the current settings: 38 (plan section 7)" "$out"
 plan_file=$(ls "$STATE"/kourai/plans/*.md 2>/dev/null | head -1)
 assert_contains "plan file has the settings diff" "Settings diff" "$(cat "$plan_file")"
+plan_text=$(cat "$plan_file")
+assert_contains "plan lists a stale allow entry" "- project allow: Bash($PROJ/.claude/bin/heartbeat.sh:*)" "$plan_text"
+assert_contains "plan lists the last stale allow entry" "- project allow: Bash($PROJ/.claude/bin/urgent-hold.sh:*)" "$plan_text"
+case "$plan_text" in *"Bash($PROJ/.claude/bin/card-test-server.sh:*)"*|*"Bash($PROJ/.claude/bin/workflow-checks.sh:*)"*) fail "plan lists a script the project keeps as stale" ;; *) pass ;; esac
+assert_contains "plan lists an auto-mode rule naming a .claude/bin path" "- auto-mode allow: Rule 20: run $PROJ/.claude/bin/urgent-hold.sh from the checkout" "$plan_text"
+assert_eq "plan lists every stale line once (19 allow entries and 19 auto-mode rules name a script that moved into the plugin; the 4 and 2 that name the project's own scripts stay valid)" 38 "$(grep -c '^- \(project allow\|auto-mode allow\): ' <<<"$plan_text")"
+assert_eq "plan does not list the user's own lines as stale" 0 "$(grep -c 'Bash(ls \*)\|keep me' <<<"$(sed -n '/^## 7/,$p' <<<"$plan_text")")"
+# The permission template is an explicit list: no command runner, no identity script, no blanket kourai-project.
+allow_text=$(python3 -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["permissions"]["allow"]))' "$PROJ/.claude/settings.local.json" 2>/dev/null)
 
 out=$(KI apply 2>&1); rc=$?
 assert_eq "apply succeeds" 0 "$rc"
@@ -62,6 +87,12 @@ assert_contains "the user's own hook stays" "echo mine" "$p"
 assert_contains "the gate is registered with KOURAI_BIN" "KOURAI_BIN=" "$p"
 assert_contains "KOURAI_CONFIG is set in env" "$CFG" "$p"
 assert_contains "the plugin is enabled" "kourai@kourai-example" "$p"
+for n in as-claude.sh gh-app-token.sh run-bg.sh run-locked.sh agent-worktree.sh; do
+  case "$p" in *"Bash($n"*) fail "the allow list opens $n" ;; *) pass ;; esac
+done
+case "$p" in *'"Bash(kourai-project *)"'*) fail "the allow list opens every project script" ;; *) pass ;; esac
+assert_contains "the allow list names a project script by name" "Bash(kourai-project card-test-server.sh *)" "$p"
+assert_contains "the allow list names a plugin script by name" "Bash(board-snapshot.sh *)" "$p"
 assert_contains "auto-mode keeps its own rules" "keep me" "$(cat "$T/user-settings.json")"
 assert_contains "auto-mode has the kourai rule" "[kourai-example]" "$(cat "$T/user-settings.json")"
 

@@ -50,6 +50,12 @@ run "fastlane/ change, App-visible: no" "$REV" $APP "App-visible: no — x" fast
 run "assets/ change, App-visible: no" "$REV" $APP "App-visible: no — x" assets/images/icons/a.svg
 run "a new top-level file, App-visible: no" "$REV" $APP "App-visible: no — x" Makefile
 run "a hook change, App-visible: no" "$REV" $APP "App-visible: no — x" .claude/hooks/merge-gate.sh
+run "a Markdown file under android/, App-visible: no" "$REV" $APP "App-visible: no — x" android/README.md
+run "a Markdown file under ios/, App-visible: no" "$REV" $APP "App-visible: no — x" ios/Runner/x.md
+run "a Markdown file under assets/, App-visible: no" "$REV" $APP "App-visible: no — x" assets/legal/terms.md
+run "a Markdown file under lib/, no line (flag path before free path)" "$REV" $APP "What it does" lib/features/home/README.md
+run "a Markdown file under lib/, App-visible: no" "$want_no" $APP "App-visible: no — x" lib/features/home/README.md
+run "a Markdown file at the top, no line" "$NOREV" $APP "What it does" README.md
 run "tests and docs only, no line" "$NOREV" $APP "What it does" test/a_test.dart docs/a.md
 run "server code, App-visible: no" "$NOREV" $SRV "App-visible: no — x" app/models/a.rb
 run "server code, no line" "$REV" $SRV "What" app/models/a.rb

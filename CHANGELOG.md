@@ -23,6 +23,12 @@ The first release candidate: the RunnerCity workflow, extracted.
   and an id scan over the diff and the tree.
 - Ported up to RunnerCity workflow change RunnerCityOrg/runnercity-app#493 (Sentry triage
   code-freeze rule).
+- Review fixes: the permission template allows named scripts only (no command runners, no identity
+  scripts) and `kourai-project` takes a script name, never a path; the review policy tests flag
+  paths before free paths (live order); `board-wait` and `pr-ready` run the installed policy through
+  `kourai-hook`; project scripts are named `kourai-project <script>` in the agents and core rules;
+  `kourai-install check` reports `CONFIG DRIFT`, `plan` lists stale settings lines; the rollback order
+  keeps the gates on; the docs say what a project must supply.
 - Docs: getting started, walkthrough, how it runs, config, variables, updating, adapters,
   switch-over, sync.
 

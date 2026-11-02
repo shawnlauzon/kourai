@@ -87,6 +87,10 @@ it that way:
   (`SHA256SUMS`) and prints `GATE DRIFT` on a mismatch (fail closed). `kourai-hook`
   refuses to run a gate whose hash does not match. A per-poll check inside
   `board-wait` is not built yet; it is listed in `docs/SWITCH-OVER.md` as a follow-up.
+- `check` also prints `CONFIG DRIFT` when the config (`<state_dir>/kourai.toml`) changed since the apply. The
+  config decides the gates (the bot login, the review tables, the guarded paths), so a change is read, then
+  recorded by running `plan` and `apply` again. `plan` also lists, in its section 7, every line of the current
+  settings that still names a moved script by its old `.claude/bin` path.
 - `check` also compares the active release folder with its tag. This is
   agent-flow's kit-verify idea: it catches local edits to plugin files. It
   also lists project agents that override plugin agents of the same name.

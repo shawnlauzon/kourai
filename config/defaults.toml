@@ -79,7 +79,8 @@ no_add_paths = []
 default = "review"
 # Paths whose change always needs the user's review (globs).
 always_paths = []
-# Paths whose change never needs review (globs).
+# Paths whose change never needs review (globs). Tested after always_paths and flag_paths, and a `*` matches
+# across `/`: `*.md` frees a Markdown file in every folder, so list each folder a user can see in always_paths.
 free_paths = []
 # Paths where a change needs review only when the PR body says "App-visible: yes".
 flag_paths = []

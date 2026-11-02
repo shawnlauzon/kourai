@@ -1,6 +1,6 @@
 # Bash allow rules the installer owns in the project's settings.local.json (one per line).
 # An explicit list, one `Bash(<name> *)` and one `Bash(<name>)` line per script, that mirrors the 23
-# named scripts the RunnerCity installation allows today (the plugin's bin/ is on the Bash PATH, so
+# named scripts the first installation allowed before the plugin existed (the plugin's bin/ is on the Bash PATH, so
 # agents call them by bare name). It is deliberately NOT every script in bin/: the command runners and the
 # identity scripts (as-claude.sh, gh-app-token.sh, run-bg.sh, run-locked.sh, agent-worktree.sh) stay off the list, so
 # the classifier decides each call under the auto-mode rules. A new script is allowed only by adding its lines

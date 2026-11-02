@@ -24,14 +24,16 @@ check() { # stdin: "file:line:text" lines
       grep -oE '/Users/shawn[^ "'"'"'`]*' <<<"$txt" | grep -vE '^/Users/shawn/Development/(example_files|github/example-)' | grep -q . \
         && { echo "SCAN: real user path in $f"; fail=1; }
     fi
-    if grep -qiE 'runnercity|runner_city' <<<"$txt"; then
+    # the history pass skips the project-name check: a name in a later-fixed comment is not a leak, and history is not rewritten
+    if [ "${names:-1}" = 1 ] && grep -qiE 'runnercity|runner_city' <<<"$txt"; then
       grep -qxF "$f" "$allow_names" || { echo "SCAN: project name in $f (not in $allow_names): ${txt:0:100}"; fail=1; }
     fi
   done
 }
 check < <(git ls-files -z | xargs -0 grep -InE "$bad_pat" 2>/dev/null | grep -vE '^tests/scan-')
 if [ "${1:-}" ]; then
-  check < <(git diff -U0 "$1"..HEAD -- . ':!tests/scan-*' | awk '/^\+\+\+ b\//{f=substr($0,7)} /^\+[^+]/{print f":0:"substr($0,2)}' | grep -E "$bad_pat")
+  names=0
+  check < <(git log -p -U0 --format= "$1"..HEAD -- . ':!tests/scan-*' | awk '/^\+\+\+ b\//{f=substr($0,7)} /^\+[^+]/{print f":0:"substr($0,2)}' | grep -E "$bad_pat")
 fi
 [ "$fail" = 0 ] && echo "SCAN OK"
 exit $fail

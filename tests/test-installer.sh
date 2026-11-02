@@ -35,7 +35,7 @@ sed -e "s#/Users/shawn/Development/example_files#$STATE#" \
     -e "s#^version = .*#version = \"$VER\"#" "$KOURAI_ROOT/tests/fixtures/config.toml" > "$CFG"
 echo '{"autoMode":{"allow":["$defaults","keep me"]},"other":1}' > "$T/user-settings.json"
 echo '{"permissions":{"allow":["Bash(ls *)"]},"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"echo mine"}]}]},"x":2}' > "$PROJ/.claude/settings.local.json"
-# Copies of the live settings' shapes (the RunnerCity allow entries by full path, the auto-mode rules that name
+# Copies of the live settings' shapes (a project's allow entries by full path, the auto-mode rules that name
 # .claude/bin paths): the plan must list every one of them as stale (plan section 7).
 python3 - "$PROJ" "$T/user-settings.json" <<'PY'
 import json, sys

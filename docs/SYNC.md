@@ -3,7 +3,7 @@
 kourai is built from a copy of runner_city's workflow files while the
 RunnerCity board keeps running on its own copy. Every workflow change that
 merges into runner_city after the baseline must be ported here before the
-switch-over (P9). P9 cannot start while a row below is open.
+switch-over (`docs/SWITCH-OVER.md`). The switch-over cannot start while a row below is open.
 
 ## Baseline
 
@@ -27,4 +27,5 @@ or `.claude/hooks/`. A settings section the user applies also counts.
 
 | runner_city PR | Merged | What it changes | kourai commit or PR | Ported |
 |---|---|---|---|---|
-| none yet | | | | |
+| RunnerCityOrg/runnercity-app#493 (`d30865c3`, with `26ada1a7`, `0c1087ad`, `7c757355`) | 2026-11-02 | Sentry triage code freeze rule, ignore parameters, 404 prefix lookup, `SERIOUS:` relay by the board watcher and the run-board command | `agents/sentry-triager.md`, `agents/board-watcher.md`, `commands/run-board.md` in the K9 commit of this PR (its number is on the card) | yes |
+| Rows after 22fe69b5 up to `d30865c3` | | `.claude/board/WORKFLOW.md` (4 lines) and `decisions/2026-11-02-XrBUW2w0.md` stay in RunnerCity (no kourai file) | not ported by design | n/a |

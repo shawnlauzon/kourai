@@ -1,8 +1,9 @@
 # Workflow variables: the inventory
 
 Every value in RunnerCity's workflow that another project may want to change,
-with its value today, where it is hard-coded, and the config key that
-replaces it. Read from runner_city mobile main `913585a3` (2026-10-17) plus
+with its value, where it was hard-coded when the inventory was taken (the
+"Where today" column; line numbers are RunnerCity's files at that baseline,
+not kourai's), and the config key that replaces it. Read from runner_city mobile main `913585a3` (2026-10-17) plus
 the four live hooks on disk (marked "live"); paths are relative to
 `runner_city/.claude/`. R = `board/rules.md`, W = `board/WORKFLOW.md`.
 
@@ -15,7 +16,7 @@ default and are required.
 
 | Key | Default | RunnerCity | Where today | What it does |
 |---|---|---|---|---|
-| `install.version` | `0.1.0` | n/a | new | kourai version the installation runs (tag `kourai--v<version>`) |
+| `install.version` | `0.1.0-rc1` | n/a | new | kourai version the installation runs (tag `kourai--v<version>`) |
 | `install.source_repo` | `shawnlauzon/kourai` | n/a | new | Where releases come from |
 
 ## Project and paths
@@ -25,7 +26,7 @@ default and are required.
 | `project.name` | required | `runnercity` | prose everywhere ("RunnerCity Development board") | Messages, card names |
 | `project.state_dir` | `~/Development/{project.name}_files` | `~/Development/runner_city_files` | 83 hits in 36 files; `bin/board-wait.py:109`, `bin/pause-lib.sh:12`, `bin/heartbeat.sh:13`, every hook | State, logs, locks, secrets |
 | `project.transcripts_dir` | `auto` | `~/.claude/projects/-Users-shawn-Development-github-runner-city` | `bin/agent-state.sh:83,99`, `agents/token-auditor.md:12`, `agents/workflow-verifier.md:25` (env `AGENT_TRANSCRIPTS_DIR`) | Liveness and token audit read transcripts here |
-| `project.rules_file` | `""` | `.claude/board/rules.md` (until the P4 split) | `bin/rules-ranges.sh:24` (env `RULES_FILE`) | The project part of the rules |
+| `project.rules_file` | `""` | `.claude/board/rules.md` | `bin/rules-ranges.sh:24` (env `RULES_FILE`) | The project part of the rules |
 | `paths.trello_env` | `{project.state_dir}/trello.env` | same | every hook; `bin/release-gap.sh:22`, `card-summary.sh:32`, `pr-ready.sh:21`, `board-snapshot.sh:38`, `agents-status.sh:52`, `board-wait.py:171`, `board-watch.sh:10` (env `TRELLO_ENV_FILE` in bin only) | Trello key and token |
 | `paths.locks_dir` | `{project.state_dir}/locks` | same | `bin/dev-merge-lock.sh:32`, `bin/run-locked.sh:31` (env `RC_LOCK_DIR`) | Named locks |
 | `paths.pause_dir` | `{project.state_dir}/pause` | same | `bin/pause-lib.sh:12` (env `RC_PAUSE_DIR`) | Per-card pause files |
@@ -86,7 +87,7 @@ RunnerCity: server first (`RunnerCityOrg/runnercity-api-server`, base `developme
 | `repos[].release_branch` | `""` | server `staging` | live `staging-gate.sh:43,110-114`, `agents/promoter.md:14,157` | Promoter-only release branch |
 | `repos[].release_tag_prefix` | `""` | mobile `client-build/` | live `staging-gate.sh:45,119`, R194, `agents/promoter.md:98-100` | Tag that triggers a client build |
 | `repos[].card_name_tag` | `#` | `server #`, `#` | R66 | Card name suffix `(#N, server #M)` |
-| `repos[].adapter` | `""` | (P5) `rails`, `flutter` | stack knowledge in the builder, tester and promoter agents | Stack adapter |
+| `repos[].adapter` | `""` | (not read yet: no adapter implementation) `rails`, `flutter` | stack knowledge in the builder, tester and promoter agents | Stack adapter |
 | `repos[].deps_commands` | `[]` | `bundle install --quiet`; `flutter pub get` | `bin/agent-worktree.sh:74,76` (env `RC_SKIP_DEPS`) | Worktree setup |
 | `repos[].worktree_env_placeholders` | `[]` | mobile `.env .env.development .env.staging .env.production .env.local` | `bin/agent-worktree.sh:59` | Empty env files in worktrees |
 | `repos[].worktree_env_links` | `[]` | mobile `.env .env.e2e`; server `.env.development.local .env.localhost` | `bin/agent-worktree.sh:63,67` | Env files linked into worktrees |
@@ -181,7 +182,7 @@ RunnerCity: server first (`RunnerCityOrg/runnercity-api-server`, base `developme
 | `liveness.floating_roles` | merger, promoter, workflow-builder, workflow-verifier | `bin/agent-state.sh:113` | Card from the last touch |
 | `liveness.shared_roles` | board-watcher, merger, promoter, workflow-builder, workflow-verifier, token-auditor, fraud-watcher, sentry-triager | `bin/usage/agg.py:100,120` (also lists `cani-agent`, `general-purpose`, `Explore`) | Left out of per-card cost |
 
-The fixed set of 15 agent types in `bin/agent-state.sh:107-109` becomes the keys of `models` plus the project's own agents (P3 makes it prefix-tolerant).
+The fixed set of 15 agent types in `bin/agent-state.sh:107-109` becomes the keys of `models` plus the project's own agents (liveness is prefix-tolerant: `kourai:card-manager` and `card-manager` are the same type).
 
 ## Optional agents and their schedules
 
@@ -224,7 +225,7 @@ Each agent file's `model:` line (line 4) is rendered from these. Project agents 
 
 RunnerCity's project agents add `mobile-builder = "opus"`, `server-builder = "opus"`, `android-builder = "haiku"`, `ios-builder = "haiku"`. The token audit's price table (`bin/usage/agg.py:22`, `permodel.py:32`) is a fact about models, not a setting, and stays in code.
 
-## Adapter settings (the `adapters` table, filled in P5)
+## Adapter settings (the `adapters` table; nothing reads it yet, see `docs/ADAPTERS.md`)
 
 Stack and infrastructure values move into `[adapters.<name>]` of the same config file, so they too change without a code change. Each adapter documents its own keys. RunnerCity's today:
 
@@ -258,7 +259,7 @@ These stay in code: they are protocol between agents and gates, or facts.
 - Exit codes and verdict words; sha, short-link and card-id formats.
 - Trello, GitHub and Stripe API bases and versions.
 - Trello read page sizes and output trimming widths in the scripts.
-- The `rules-ranges.sh` line markers (replaced by section names in P4).
+- The `rules-ranges.sh` markers: they are heading names, `[core: <heading>]` and `[project: <heading>]`.
 - RunnerCity code conventions in `board/agent-rules.md` (they move to that project's rules).
 
 ## Drift found while taking the inventory

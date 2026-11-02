@@ -1,9 +1,30 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0-rc1
 
-- Plugin and marketplace manifests; repo layout.
-- `kourai-config`: the loader for an installation's config, with
-  `config/defaults.toml` documenting every workflow variable.
-- Docs: the config file, the variable inventory, the update and rollback
-  design, the runner_city sync baseline.
+The first release candidate: the RunnerCity workflow, extracted.
+
+- Nine plugin agents (board watcher, card manager, merger, workflow builder, workflow verifier,
+  code reviewer, time optimizer, token auditor, Sentry triager) and `/kourai:run-board`.
+  Plugin agents start as `kourai:<name>`; a project's own agents start by bare name. The
+  `[agents]` table in the config lists both.
+- `rules/core.md` and a project rules file made from `rules/project-template.md`. Rules markers
+  are `[core: <heading>]` and `[project: <heading>]`; `rules-ranges.sh check` verifies both.
+- Every id, path, repo name, limit and timeout reads from one TOML config via `kourai-config`;
+  env overrides the scripts already had keep winning.
+- `kourai-hook` and `kourai-project` run a version-pinned gate or a project script by name.
+- Gates (`merge-gate`, `staging-gate`, `merged-comment-gate`, `review-policy`) copied by hash
+  into the installation, never run from the plugin folder.
+- `installer/kourai-install`: plan, apply, rollback, check, prove, with a per-installation
+  local marketplace, backups and a one-command rollback.
+- Liveness (agent-state, agents-status, board-wait) accepts the `kourai:` agent-type prefix.
+- Tests: the ported script tests on a fixture config, the installer test on scratch, the real
+  `claude plugin validate --strict .`, `tests/prove-real-agent.sh` (one real `claude -p` run),
+  and an id scan over the diff and the tree.
+- Ported up to RunnerCity workflow change RunnerCityOrg/runnercity-app#493 (Sentry triage
+  code-freeze rule).
+- Docs: getting started, walkthrough, how it runs, config, variables, updating, adapters,
+  switch-over, sync.
+
+Not in this version: an adapter implementation, a per-poll gate-drift check in `board-wait`,
+CI.

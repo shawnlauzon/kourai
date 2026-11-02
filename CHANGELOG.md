@@ -34,3 +34,9 @@ The first release candidate: the RunnerCity workflow, extracted.
 
 Not in this version: an adapter implementation, a per-poll gate-drift check in `board-wait`,
 CI.
+- Send-back round 2: the watcher reload reads the board watcher from the plugin once the project's copy
+  is gone; `rules/core.md` has a Placeholders table mapping each setting placeholder to its
+  `kourai-config get` key (tested); the installer's stale-line check catches relative mentions of the
+  project's `.claude/` folders; `kourai-hook review-policy.sh check` is allowed; the workflow verifier
+  runs the refusal scan and the read-only drift check by full path; `docs/SWITCH-OVER.md` has a step that
+  rewrites the auto-mode rules before the board starts.

@@ -13,8 +13,17 @@ for t in aws tailscale ssh curl gh; do
 done
 assert_eq "five calls logged" 5 "$(wc -l < "$log" | tr -d ' ')"
 
-KOURAI_TEST_NETLOG="$log" git push origin main >/dev/null 2>&1
-assert_eq "git push is blocked" 97 "$?"
+# the push runs in a throwaway repo with a network remote, never in the caller's checkout (whose origin may be a
+# local path, which the fake allows on purpose: the tests use throwaway bare repos)
+git -C "$tmp" init -q netrepo
+git -C "$tmp/netrepo" remote add origin https://example.invalid/x.git
+KOURAI_TEST_NETLOG="$log" git -C "$tmp/netrepo" push origin main >/dev/null 2>&1
+assert_eq "git push to a network remote is blocked" 97 "$?"
+git -C "$tmp" init -q --bare bare.git
+git -C "$tmp" init -q localrepo
+git -C "$tmp/localrepo" remote add origin "$tmp/bare.git"
+KOURAI_TEST_NETLOG="$log" git -C "$tmp/localrepo" push origin HEAD:refs/heads/x >/dev/null 2>&1
+assert_eq "git push to a local path remote is the real git (it has no commit, so it fails with 1, not 97)" 1 "$?"
 
 git -C "$tmp" init -q repo
 assert_eq "local git works" 0 "$?"

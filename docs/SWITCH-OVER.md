@@ -40,10 +40,12 @@ must have no open row before you start.
    on the switch-over card (`PR:`, then `AWAITING VERIFIED:`), and starts the workflow verifier and an
    independent reviewer by hand, as the watcher would. `workflow-checks.sh` must print 0 FAIL on the branch
    (precondition; see the branch's `.claude/bin/workflow-checks.sh`). The review policy sends it to REVIEW:
-   you approve on GitHub at the head the main session names. The main session then merges it, still by hand:
-   `as-claude.sh RunnerCityOrg/runnercity-app gh pr merge <n> --repo RunnerCityOrg/runnercity-app --merge --match-head-commit <sha> --body "<message>"`
-   where the message has the two trailer lines `Watcher: restart` and `Main checkout: hold` on lines of their
-   own (a default merge message would not carry them). Nobody else merges it.
+   you approve on GitHub at the head the main session names. The main session first writes the merge message
+   to a file in the state folder (a first line, a blank line, then the two trailer lines `Watcher: restart`
+   and `Main checkout: hold` on lines of their own), then merges it, still by hand:
+   `as-claude.sh RunnerCityOrg/runnercity-app gh pr merge <n> --repo RunnerCityOrg/runnercity-app --merge --match-head-commit <sha> --body-file <that file>`
+   (the merge gate refuses a command with a newline in it, so the message never goes in `--body`; a default
+   merge message would not carry the trailers). Nobody else merges it.
 6. **Fast-forward the main checkout** (`git -C <checkout> merge --ff-only origin/main`), then delete
    the hold file.
 7. **Start the board.** In a new Claude Code session in the project, run `/kourai:run-board`. Watch the

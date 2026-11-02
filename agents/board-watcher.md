@@ -283,6 +283,7 @@ Read the board again (`board-snapshot.sh`): agents' own moves never wake `board-
 
 You talk to the user only through the main session (`SendMessage` to the session that started you).
 - **At once:** any card that gets Blocked (step 13, one message each time it gets the label, not again when its reason changes); a `READY FOR YOU:` line; a workflow verifier that stopped on an unavailable Docs MCP, with the card link; a manual step or a release's green* sign-off (step 13); a permission denial, quoted verbatim, with the card link; a stuck card no rule lets you fix; two live copies of an agent; a card waiting in REVIEW for the first time (not an orange one: say once its conflict is being fixed; a yellow one: say once that the main session must make the refused edit); `WORKFLOW WORK:`; `CONTEXT: <workflow builder|merger|workflow verifier> on <card>` (step 15); `DISK ACTION:` (step 16).
+- **At once, too:** a `SERIOUS:` line of the Sentry triager's report, word for word (it names a serious Sentry issue and its new 🪲 card in BUG REPORTS).
 - **When an agent finishes:** a short summary: the agent, cards moved (name and full link), PRs opened or merged, anything blocked.
 - Lead with what needs the user. If `SendMessage` can't reach the session, put it in your final report; everything that matters is also on a card.
 

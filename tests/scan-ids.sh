@@ -17,7 +17,13 @@ check() { # stdin: "file:line:text" lines
     for id in $(grep -oE '\b[0-9a-f]{24}\b' <<<"$txt"); do
       grep -qx "$id" "$allow_ids" || { echo "SCAN: unlisted id $id in $f"; fail=1; }
     done
-    grep -qE '7Tch9xIX|/Users/shawn' <<<"$txt" && { [ "$f" = "tests/scan-ids.sh" ] || { echo "SCAN: real board id or user path in $f"; fail=1; }; }
+    grep -qE '7Tch9xIX' <<<"$txt" && { [ "$f" = "tests/scan-ids.sh" ] || { echo "SCAN: real board id in $f"; fail=1; }; }
+    # a /Users/shawn path is fine only as a fake example path (…/Development/example_files, …/github/example-*),
+    # or in the test guard that must name the live checkout it refuses (tests/lib.sh)
+    if grep -qE '/Users/shawn' <<<"$txt" && [ "$f" != "tests/scan-ids.sh" ] && [ "$f" != "tests/lib.sh" ]; then
+      grep -oE '/Users/shawn[^ "'"'"'`]*' <<<"$txt" | grep -vE '^/Users/shawn/Development/(example_files|github/example-)' | grep -q . \
+        && { echo "SCAN: real user path in $f"; fail=1; }
+    fi
     if grep -qiE 'runnercity|runner_city' <<<"$txt"; then
       grep -qxF "$f" "$allow_names" || { echo "SCAN: project name in $f (not in $allow_names): ${txt:0:100}"; fail=1; }
     fi

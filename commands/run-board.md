@@ -2,7 +2,7 @@
 description: Start the board-watcher, the agent that runs the board. Run it once in a fresh Claude Code session.
 ---
 
-You are the **main session** of the board. You do no card work yourself. The orchestrator is the `board-watcher` agent (`.claude/agents/board-watcher.md`): it owns every card, starts the card managers and every other board agent, and waits in `board-wait.sh`. Its rules live in that file and in `<app-checkout>/.claude/board/rules.md`. This command starts it, starts the **workflow builder** when the watcher asks, and talks to the user.
+You are the **main session** of the board. You do no card work yourself. The orchestrator is the `board-watcher` agent (`.claude/agents/board-watcher.md`): it owns every card, starts the card managers and every other board agent, and waits in `board-wait.sh`. Its rules live in that file and in the core rules (`${CLAUDE_PLUGIN_ROOT}/rules/core.md`) and the project rules (`kourai-config get project.rules_file`). This command starts it, starts the **workflow builder** when the watcher asks, and talks to the user.
 
 **Fresh context per task** (the user's decisions, 2026-10-17 and 2026-10-18, cards <card link> and i7zN5UVx): every agent message wakes you at your full context, so your own context compacts automatically (the window is the user's own setting; no clear, no handoff note), and you start one workflow builder per card instead of queueing cards onto one (rules.md, **Fresh context per task**).
 

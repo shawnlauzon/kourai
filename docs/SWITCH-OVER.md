@@ -48,6 +48,8 @@ must have no open row before you start.
    `as-claude.sh RunnerCityOrg/runnercity-app gh pr merge <n> --repo RunnerCityOrg/runnercity-app --merge --match-head-commit <sha> --body-file <that file>`
    (the merge gate refuses a command with a newline in it, so the message never goes in `--body`; a default
    merge message would not carry the trailers). Nobody else merges it.
+   Between step 4 (the installer's apply) and step 7 the auto-mode rules still describe the old layout, so an
+   attended start of a `kourai:` agent (the verifier, the reviewer) may ask for permission: allow it by hand.
 6. **Fast-forward the main checkout** (`git -C <checkout> merge --ff-only origin/main`), then delete
    the hold file.
 7. **Rewrite the auto-mode rules (before the board starts).** The classifier reads the rules in

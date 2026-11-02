@@ -167,9 +167,13 @@ class Inst:
         bins = set(self.bin_scripts(root)) | {"kourai-install"}
         agents = set(os.listdir(os.path.join(root, "agents"))) if os.path.isdir(os.path.join(root, "agents")) else set()
         def stale(text):
-            for m in re.finditer(re.escape(proj) + r"/\.claude/(bin|agents|hooks)/([A-Za-z0-9_.-]*)", text):
+            # A mention by the absolute path, or by the project folder's name (a relative mention such as
+            # "agents defined in runner_city/.claude/agents/"); a bare folder with no file name counts too.
+            if proj not in text and os.path.basename(proj) not in text:
+                return False
+            for m in re.finditer(r"\.claude/(bin|agents|hooks)/([A-Za-z0-9_.-]*)", text):
                 kind, name = m.group(1), m.group(2)
-                if kind == "hooks" or (kind == "bin" and name in bins) or (kind == "agents" and name in agents):
+                if kind == "hooks" or name == "" or (kind == "bin" and name in bins) or (kind == "agents" and name in agents):
                     return True
             return False
         owned_p = self.record.get(MARK, {}).get("allow", [])

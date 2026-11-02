@@ -99,8 +99,14 @@ it that way:
 
 ## The commands
 
-`kourai-install` is run only by the user, attended. Agents never run it,
-as with `apply-settings-section.sh` today.
+`kourai-install` is run by the user, attended, for `plan`, `apply`, `rollback`
+and `prove`. Agents never run those, as with `apply-settings-section.sh`
+today. The one exception is `check`: it changes nothing (it reads the config,
+the installed files and the release tag with `git ls-remote`), and the
+workflow verifier's drift check runs it by its full path,
+`python3 "$(kourai-config path --plugin-root)/installer/kourai-install" check`;
+the project's settings section carries the allow entry that names exactly that
+command, because `kourai-install` is not on the PATH.
 
 ### `plan`
 

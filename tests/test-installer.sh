@@ -48,6 +48,9 @@ d["permissions"]["allow"] += ["Bash(%s/.claude/bin/test-server.sh ports:*)" % pr
 json.dump(d, open(p, "w"))
 u = json.load(open(us))
 u["autoMode"]["allow"] += ["Rule %d: run %s/.claude/bin/%s.sh from the checkout" % (k, proj, n) for k, n in enumerate(names[:21])]
+# Relative mentions (the live rules 3 and 6 name the folder, not a full path): also stale.
+u["autoMode"]["allow"] += ["Start agents only for agents defined in %s/.claude/agents/" % proj.rsplit("/", 1)[1],
+                           "Run the project scripts in %s/.claude/bin/ for the board" % proj.rsplit("/", 1)[1]]
 json.dump(u, open(us, "w"))
 PY
 cp "$PROJ/.claude/settings.local.json" "$T/project-before.json"
@@ -65,7 +68,7 @@ assert_contains "plan names the plan file" "Plan written" "$out"
 assert_eq "plan changes no settings" "$(cat "$T/project-before.json")" "$(cat "$PROJ/.claude/settings.local.json")"
 assert_eq "plan changes no user settings" "$(cat "$T/user-before.json")" "$(cat "$T/user-settings.json")"
 [ ! -e "$HOOKS" ] && pass || fail "plan copied hooks"
-assert_contains "plan reports the stale line count" "Stale lines in the current settings: 38 (plan section 7)" "$out"
+assert_contains "plan reports the stale line count" "Stale lines in the current settings: 40 (plan section 7)" "$out"
 plan_file=$(ls "$STATE"/kourai/plans/*.md 2>/dev/null | head -1)
 assert_contains "plan file has the settings diff" "Settings diff" "$(cat "$plan_file")"
 plan_text=$(cat "$plan_file")
@@ -73,7 +76,7 @@ assert_contains "plan lists a stale allow entry" "- project allow: Bash($PROJ/.c
 assert_contains "plan lists the last stale allow entry" "- project allow: Bash($PROJ/.claude/bin/urgent-hold.sh:*)" "$plan_text"
 case "$plan_text" in *"Bash($PROJ/.claude/bin/card-test-server.sh:*)"*|*"Bash($PROJ/.claude/bin/workflow-checks.sh:*)"*) fail "plan lists a script the project keeps as stale" ;; *) pass ;; esac
 assert_contains "plan lists an auto-mode rule naming a .claude/bin path" "- auto-mode allow: Rule 20: run $PROJ/.claude/bin/urgent-hold.sh from the checkout" "$plan_text"
-assert_eq "plan lists every stale line once (19 allow entries and 19 auto-mode rules name a script that moved into the plugin; the 4 and 2 that name the project's own scripts stay valid)" 38 "$(grep -c '^- \(project allow\|auto-mode allow\): ' <<<"$plan_text")"
+assert_eq "plan lists every stale line once (19 allow entries and 21 auto-mode rules name a script that moved into the plugin; the 4 and 2 that name the project's own scripts stay valid)" 40 "$(grep -c '^- \(project allow\|auto-mode allow\): ' <<<"$plan_text")"
 assert_eq "plan does not list the user's own lines as stale" 0 "$(grep -c 'Bash(ls \*)\|keep me' <<<"$(sed -n '/^## 7/,$p' <<<"$plan_text")")"
 # The permission template is an explicit list: no command runner, no identity script, no blanket kourai-project.
 allow_text=$(python3 -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["permissions"]["allow"]))' "$PROJ/.claude/settings.local.json" 2>/dev/null)
@@ -92,6 +95,7 @@ for n in as-claude.sh gh-app-token.sh run-bg.sh run-locked.sh agent-worktree.sh;
 done
 case "$p" in *'"Bash(kourai-project *)"'*) fail "the allow list opens every project script" ;; *) pass ;; esac
 assert_contains "the allow list names a project script by name" "Bash(kourai-project card-test-server.sh *)" "$p"
+assert_contains "the allow list lets the review policy check run through kourai-hook" "Bash(kourai-hook review-policy.sh check *)" "$p"
 assert_contains "the allow list names a plugin script by name" "Bash(board-snapshot.sh *)" "$p"
 assert_contains "auto-mode keeps its own rules" "keep me" "$(cat "$T/user-settings.json")"
 assert_contains "auto-mode has the kourai rule" "[kourai-example]" "$(cat "$T/user-settings.json")"
